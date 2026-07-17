@@ -73,8 +73,7 @@ spec:
         description: ${{ parameters.description }}
         defaultBranch: main
         repoVisibility: public
-        # The gitops repo's ApplicationSet discovers services by this topic —
-        # no manual ArgoCD wiring per service.
+        # this topic is what the ApplicationSet in idp-gitops looks for
         topics:
           - idp-service
 

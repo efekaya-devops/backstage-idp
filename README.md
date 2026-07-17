@@ -1,56 +1,50 @@
 # backstage-idp
 
-The developer portal of the Internal Developer Platform demo: Backstage with a
-**golden path** — one click from "I need a service" to a running, observable
-deployment.
+The portal for the IDP demo. Backstage + a golden path template - click
+create, get a running service.
 
-Part of a multi-repo platform (how a real platform team structures it):
+Part of a 4-repo setup:
 
-| Repo | Role |
+| Repo | What |
 |---|---|
-| **backstage-idp** (this) | The portal: catalog, TechDocs, scaffolder + the golden-path template |
-| [idp-gitops](../idp-gitops) | Local kind cluster bootstrap, ArgoCD, monitoring stack, service discovery |
-| [terraform-modules](../terraform-modules) | Reusable infrastructure modules (local + cloud) |
-| [platform-docs](../platform-docs) | Architecture, user journey, decision records |
+| **backstage-idp** (here) | the portal itself |
+| [idp-gitops](../idp-gitops) | kind cluster, argocd, monitoring |
+| [terraform-modules](../terraform-modules) | infra modules, local + cloud |
+| [platform-docs](../platform-docs) | architecture notes, journey writeup |
 
-## The user journey (the demo)
+## what happens when you click create
 
 ```
-developer signs in
-  └─ picks "Create a Service" from the catalog
-       └─ fills 4 fields, clicks Create
-            ├─ GitHub repo generated (app + Dockerfile + k8s manifests + docs)
-            ├─ GitHub Actions builds & pushes the image to GHCR
-            ├─ ArgoCD auto-discovers the repo (topic: idp-service) and syncs
-            └─ Grafana dashboard for the service appears automatically
+sign in -> Create a Service -> fill in name/owner/repo -> click Create
+  -> github repo gets created (app + dockerfile + k8s manifests + docs)
+  -> actions builds + pushes the image
+  -> argocd notices the repo (tagged idp-service) and syncs it
+  -> grafana dashboard shows up on its own
 ```
 
-No tickets. No copy-pasted boilerplate. ~3 minutes to a monitored deployment.
+Takes a few minutes end to end, most of it is waiting on the docker build.
 
-## Run it
+## running it
 
-Prerequisites: Node 20+, Yarn, Docker, a GitHub account with a PAT
-(`repo` + `workflow` scopes), and the cluster from
-[idp-gitops](../idp-gitops) running.
+Need: node 20+, yarn, docker, a github PAT (repo + workflow scopes), and
+the cluster from idp-gitops up already.
 
 ```bash
-export GITHUB_TOKEN=<your PAT>
-# optional, for live workload health in the portal:
+export GITHUB_TOKEN=<your pat>
+# optional - lets the portal show live pod health:
 export KUBERNETES_CLUSTER_URL=$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')
-export KUBERNETES_SA_TOKEN=<see idp-gitops/scripts/portal-credentials.sh>
+export KUBERNETES_SA_TOKEN=<run idp-gitops/scripts/portal-credentials.sh>
 
 yarn install
-yarn start          # portal on http://localhost:3000
+yarn start   # localhost:3000
 ```
 
-Sign in as **Guest**, open **Create**, run the golden path.
+sign in as guest, hit Create.
 
-## What's in the golden-path template
+## the golden path template
 
-`templates/create-service/` renders a production-*shaped* (deliberately tiny)
-service: an HTTP app with `/healthz` and Prometheus `/metrics`, a multi-stage
-Dockerfile, CI that pushes to GHCR, Kubernetes manifests with probes and
-resource limits, a ServiceMonitor, a Grafana dashboard as a labeled ConfigMap
-(hot-loaded by the sidecar), TechDocs, and catalog registration. The repo is
-tagged `idp-service`, which is how the gitops ApplicationSet finds it —
-creating a service requires **zero** manual ArgoCD or Grafana wiring.
+`templates/create-service/` - small node app with /healthz and /metrics,
+dockerfile, github actions ci, k8s manifests w/ probes and resource limits,
+a servicemonitor, a grafana dashboard (just a labeled configmap), techdocs.
+tagged `idp-service` so idp-gitops picks it up on its own - nothing to wire
+up by hand.

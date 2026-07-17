@@ -2,10 +2,8 @@ import { createFrontendModule } from '@backstage/frontend-plugin-api';
 import { SignInPageBlueprint } from '@backstage/plugin-app-react';
 import { SignInPage } from '@backstage/core-components';
 
-// Guest sign-in keeps the demo friction-free: one click and you're in the
-// developer's seat. Swapping in a real IdP (GitHub OAuth, Entra ID, Okta) is a
-// provider-config change, not an architecture change — the portal, catalog and
-// scaffolder are identity-agnostic.
+// guest sign in for the demo, one click and you're in. swap for real oauth
+// later, shouldn't need to touch anything else to do that
 const guestSignInPage = SignInPageBlueprint.make({
   params: {
     loader: async () => (props: any) => (

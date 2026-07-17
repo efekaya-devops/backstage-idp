@@ -1,5 +1,5 @@
-# Grafana's sidecar watches for ConfigMaps with this label and hot-loads them —
-# the dashboard appears in Grafana the moment ArgoCD syncs the service.
+# grafana's sidecar picks up any configmap with this label automatically,
+# no manual dashboard import needed
 apiVersion: v1
 kind: ConfigMap
 metadata:

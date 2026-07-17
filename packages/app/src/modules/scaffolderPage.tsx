@@ -2,13 +2,11 @@ import { createFrontendModule, PageBlueprint } from '@backstage/frontend-plugin-
 import { ScaffolderPage, rootRouteRef } from '@backstage/plugin-scaffolder';
 import { convertLegacyRouteRef } from '@backstage/core-compat-api';
 
-// Hide the per-kind "Manage" templates (and any "edit") from the Create page browse
-// list, while keeping the catalog Edit action -> Manage form working (the wizard +
-// pre-fill via ?formData still resolve). The new-frontend-system scaffolder sub-page
-// exposes no template filter and always shows an "Other" group, so we render the
-// legacy ScaffolderPage — which has a first-class `templateFilter` and bundles the
-// full list + wizard + tasks router — as the /create page. The default
-// `page:scaffolder` is disabled in app-config so this owns the route.
+// hides manage/edit templates from the create page browse list (they're
+// meant to be opened via a pre-filled link, not picked from the list).
+// using the old ScaffolderPage here since the new one doesn't support
+// filtering templates yet - page:scaffolder is turned off in app-config
+// so this is the only /create route
 const HIDDEN_TAGS = ['manage', 'edit'];
 
 const scaffolderPage = PageBlueprint.make({

@@ -3,7 +3,7 @@ const http = require('http');
 let requests = 0;
 const started = Date.now();
 
-// Prometheus text format — enough for the golden dashboard without a client lib.
+// no prom client lib, just fake the text format by hand, good enough here
 function metrics() {
   return [
     '# HELP app_requests_total Total HTTP requests handled',

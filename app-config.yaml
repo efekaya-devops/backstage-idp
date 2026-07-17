@@ -1,8 +1,8 @@
 app:
   title: IDP — Internal Developer Platform
   baseUrl: http://localhost:3000
-  # The default scaffolder page is replaced by our filtered /create page (see
-  # packages/app/src/modules/scaffolderPage.tsx).
+  # using our own /create page instead of the default one, see
+  # packages/app/src/modules/scaffolderPage.tsx
   extensions:
     - page:scaffolder: false
 
@@ -19,8 +19,8 @@ backend:
     origin: http://localhost:3000
     methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
     credentials: true
-  # SQLite keeps the demo self-contained (no external DB). Switch to postgres
-  # for anything long-lived — TechDocs/search state is throwaway here.
+  # sqlite so the demo doesn't need a real db. swap to postgres if you
+  # actually want this state to survive a restart
   database:
     client: better-sqlite3
     connection: ':memory:'
@@ -28,7 +28,7 @@ backend:
 integrations:
   github:
     - host: github.com
-      # Fine-grained PAT with repo + workflow scopes on the demo org.
+      # needs repo + workflow scopes
       token: ${GITHUB_TOKEN}
 
 auth:
@@ -52,12 +52,12 @@ catalog:
   rules:
     - allow: [Component, System, API, Resource, Location, User, Group]
   locations:
-    # Golden path: one click -> repo + CI/CD + deployment + dashboard.
+    # the golden path template
     - type: file
       target: ../../templates/create-service/template.yaml
       rules:
         - allow: [Template]
-    # Org model (demo users/groups so ownership renders properly).
+    # fake users/groups so ownership shows up somewhere instead of blank
     - type: file
       target: ../../examples/org.yaml
       rules:
