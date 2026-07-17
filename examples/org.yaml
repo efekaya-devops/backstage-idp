@@ -1,0 +1,17 @@
+apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: demo-dev
+spec:
+  profile:
+    displayName: Demo Developer
+  memberOf: [team-alpha]
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: team-alpha
+  description: The demo product team
+spec:
+  type: team
+  children: []

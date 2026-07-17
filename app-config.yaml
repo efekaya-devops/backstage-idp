@@ -1,0 +1,76 @@
+app:
+  title: IDP — Internal Developer Platform
+  baseUrl: http://localhost:3000
+  # The default scaffolder page is replaced by our filtered /create page (see
+  # packages/app/src/modules/scaffolderPage.tsx).
+  extensions:
+    - page:scaffolder: false
+
+organization:
+  name: Platform Team
+
+backend:
+  baseUrl: http://localhost:7007
+  listen:
+    port: 7007
+  csp:
+    connect-src: ["'self'", 'http:', 'https:']
+  cors:
+    origin: http://localhost:3000
+    methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
+    credentials: true
+  # SQLite keeps the demo self-contained (no external DB). Switch to postgres
+  # for anything long-lived — TechDocs/search state is throwaway here.
+  database:
+    client: better-sqlite3
+    connection: ':memory:'
+
+integrations:
+  github:
+    - host: github.com
+      # Fine-grained PAT with repo + workflow scopes on the demo org.
+      token: ${GITHUB_TOKEN}
+
+auth:
+  environment: development
+  providers:
+    guest: {}
+
+scaffolder: {}
+
+techdocs:
+  builder: local
+  generator:
+    runIn: local
+  publisher:
+    type: local
+
+catalog:
+  import:
+    entityFilename: catalog-info.yaml
+    pullRequestBranchName: backstage-integration
+  rules:
+    - allow: [Component, System, API, Resource, Location, User, Group]
+  locations:
+    # Golden path: one click -> repo + CI/CD + deployment + dashboard.
+    - type: file
+      target: ../../templates/create-service/template.yaml
+      rules:
+        - allow: [Template]
+    # Org model (demo users/groups so ownership renders properly).
+    - type: file
+      target: ../../examples/org.yaml
+      rules:
+        - allow: [User, Group]
+
+kubernetes:
+  serviceLocatorMethod:
+    type: multiTenant
+  clusterLocatorMethods:
+    - type: config
+      clusters:
+        - name: kind-idp
+          url: ${KUBERNETES_CLUSTER_URL}
+          authProvider: serviceAccount
+          serviceAccountToken: ${KUBERNETES_SA_TOKEN}
+          skipTLSVerify: true
