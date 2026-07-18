@@ -19,11 +19,14 @@ backend:
     origin: http://localhost:3000
     methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
     credentials: true
-  # sqlite so the demo doesn't need a real db. swap to postgres if you
-  # actually want this state to survive a restart
+  # sqlite so the demo doesn't need a real db, but on disk rather than
+  # :memory: - otherwise every service you registered disappears the moment
+  # you restart the portal, which is a horrible surprise mid-demo.
+  # postgres if you ever want more than one backend replica.
   database:
     client: better-sqlite3
-    connection: ':memory:'
+    connection:
+      directory: .data
 
 integrations:
   github:

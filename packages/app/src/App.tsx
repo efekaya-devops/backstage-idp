@@ -5,6 +5,9 @@ import catalogPlugin from '@backstage/plugin-catalog/alpha';
 import kubernetesPlugin from '@backstage/plugin-kubernetes/alpha';
 import notificationsPlugin from '@backstage/plugin-notifications/alpha';
 import scaffolderPlugin from '@backstage/plugin-scaffolder/alpha';
+// without this there's no Docs tab at all, even though the template ships
+// mkdocs.yml and the catalog annotation
+import techdocsPlugin from '@backstage/plugin-techdocs/alpha';
 import { navModule } from './modules/nav';
 import { signInModule } from './modules/signIn';
 import { scaffolderPageModule } from './modules/scaffolderPage';
@@ -16,6 +19,7 @@ export default createApp({
     kubernetesPlugin,
     notificationsPlugin,
     scaffolderPlugin,
+    techdocsPlugin,
     navModule,
     signInModule,
     scaffolderPageModule,

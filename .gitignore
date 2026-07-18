@@ -54,3 +54,9 @@ e2e-test-report/
 
 # Cache
 .cache/
+
+# local sqlite catalog db
+.data/
+
+# throwaway automation scripts
+_*.mjs
