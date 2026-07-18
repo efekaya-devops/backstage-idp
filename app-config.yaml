@@ -57,6 +57,15 @@ catalog:
       target: ../../templates/create-service/template.yaml
       rules:
         - allow: [Template]
+    # infra self-service - both end up as a PR on the gitops repo
+    - type: file
+      target: ../../templates/request-resource-group/template.yaml
+      rules:
+        - allow: [Template]
+    - type: file
+      target: ../../templates/request-bucket/template.yaml
+      rules:
+        - allow: [Template]
     # fake users/groups so ownership shows up somewhere instead of blank
     - type: file
       target: ../../examples/org.yaml
