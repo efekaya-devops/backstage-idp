@@ -8,6 +8,9 @@ import scaffolderPlugin from '@backstage/plugin-scaffolder/alpha';
 // without this there's no Docs tab at all, even though the template ships
 // mkdocs.yml and the catalog annotation
 import techdocsPlugin from '@backstage/plugin-techdocs/alpha';
+// techdocs pages embed a search box, so without the search plugin registered
+// the whole Docs tab dies on "no implementation for plugin.search.queryservice"
+import searchPlugin from '@backstage/plugin-search/alpha';
 import { navModule } from './modules/nav';
 import { signInModule } from './modules/signIn';
 import { scaffolderPageModule } from './modules/scaffolderPage';
@@ -20,6 +23,7 @@ export default createApp({
     notificationsPlugin,
     scaffolderPlugin,
     techdocsPlugin,
+    searchPlugin,
     navModule,
     signInModule,
     scaffolderPageModule,
