@@ -44,7 +44,10 @@ scaffolder: {}
 techdocs:
   builder: local
   generator:
-    runIn: local
+    # docker, not local - "local" shells out to mkdocs and expects python +
+    # mkdocs-techdocs-core installed on the machine running the backend, which
+    # is a rubbish prerequisite for a demo. docker is already needed for kind.
+    runIn: docker
   publisher:
     type: local
 
