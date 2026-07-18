@@ -73,6 +73,11 @@ spec:
         description: ${{ parameters.description }}
         defaultBranch: main
         repoVisibility: public
+        # keep the branch protected (PRs required) but let the owner self-merge -
+        # publish:github defaults to 1 approval + enforce admins, which locks a
+        # solo dev out of their own repo
+        requiredApprovingReviewCount: 0
+        protectEnforceAdmins: false
         # marker so the idp services are easy to spot in the org - the
         # ApplicationSet actually discovers by the k8s/ folder, not this
         topics:
