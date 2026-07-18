@@ -8,6 +8,7 @@ import scaffolderPlugin from '@backstage/plugin-scaffolder/alpha';
 import { navModule } from './modules/nav';
 import { signInModule } from './modules/signIn';
 import { scaffolderPageModule } from './modules/scaffolderPage';
+import { homeModule } from './modules/home';
 
 export default createApp({
   features: [
@@ -18,5 +19,6 @@ export default createApp({
     navModule,
     signInModule,
     scaffolderPageModule,
+    homeModule,
   ],
 });
