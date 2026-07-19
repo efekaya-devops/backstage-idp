@@ -23,6 +23,9 @@ backend.add(
   import('@backstage/plugin-catalog-backend-module-scaffolder-entity-model'),
 );
 backend.add(import('@backstage/plugin-catalog-backend-module-logs'));
+// finds infra entities in the gitops repo on its own, the same way argocd
+// finds services - merge the pr and it shows up, no registration step
+backend.add(import('@backstage/plugin-catalog-backend-module-github'));
 
 // permission plugin
 backend.add(import('@backstage/plugin-permission-backend'));

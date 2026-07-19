@@ -106,7 +106,22 @@ catalog:
     - type: file
       target: ../../examples/org.yaml
       rules:
-        - allow: [User, Group]
+        - allow: [User, Group, System]
+  # infra doesn't get registered by hand. this scans the gitops repo for
+  # entity files under catalog/ and picks up whatever is there - the same
+  # discovery-by-convention argocd uses for services, so a merged infra PR
+  # lands on the catalog without anyone telling the portal about it.
+  providers:
+    github:
+      idpGitops:
+        organization: efekaya-devops
+        catalogPath: /catalog/*.yaml
+        filters:
+          repository: '^idp-gitops$'
+          branch: main
+        schedule:
+          frequency: { minutes: 1 }
+          timeout: { minutes: 3 }
 
 kubernetes:
   serviceLocatorMethod:
