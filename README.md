@@ -25,6 +25,18 @@ Companion repos:
 | `request-gcs-bucket` | same, a GCS bucket module call (`infra/gcp/`) | nothing — CI validates only |
 | `request-gke-cluster` | same, a GKE cluster module call | nothing — CI validates only |
 
+Every infra request also writes a `catalog/<name>.yaml` Resource entity into
+the same pull request. The portal scans the gitops repo for `catalog/*.yaml`
+(`catalog.providers.github` in app-config), so merging the PR is what puts the
+resource on the catalog — owner, environment tags, a link to the file in git,
+and its dependencies. Same discovery-by-convention as services: nothing
+registers anything by hand.
+
+There's deliberately no `catalog:register` step in these templates. It resolves
+the URL at request time, when the branch isn't merged and the file isn't on
+`main` yet, so the lookup fails; `optional: true` doesn't defer that lookup, it
+only swallows the failure, leaving the resource silently unregistered.
+
 Every infra template maps 1:1 to a blueprint the platform team owns: the
 Crossplane ones to an XRD+Composition in
 [crossplane-modules](https://github.com/efekaya-devops/crossplane-modules), the
