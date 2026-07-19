@@ -1,8 +1,8 @@
 # backstage-idp
 
-The portal side of the platform. One template creates a running service, the
-rest request infrastructure — Crossplane claims on the Azure side, Terraform
-module calls for AWS and GCP.
+The portal side of the platform. Two golden paths create running apps — a
+backend service and a React frontend — and the rest request infrastructure:
+Crossplane claims on the Azure side, Terraform module calls for AWS and GCP.
 
 Companion repos:
 [idp-gitops](https://github.com/efekaya-devops/idp-gitops) (cluster, argocd, monitoring) ·
@@ -17,7 +17,7 @@ full index in **[assets/](assets/)**.
 | | |
 |---|---|
 | ![the portal's template list](assets/backstage-create.png) | ![services in the catalog](assets/backstage-catalog.png) |
-| **The portal.** Ten templates: one golden path, nine ways to ask for infrastructure. | **The catalog.** Services register themselves, owner and all. |
+| **The portal.** Eleven templates: two golden paths, nine ways to ask for infrastructure. | **The catalog.** Services register themselves, owner and all. |
 | ![requested infrastructure in the catalog](assets/backstage-resources.png) | ![argocd applications](assets/argocd-apps.png) |
 | **Infrastructure is catalogued too.** Everything a team asked for, with an owner — not just the services. | **ArgoCD.** Every app synced and healthy, including a team's own claims. |
 | ![argocd resource tree](assets/argocd-tree.png) | ![grafana dashboard](assets/grafana-dashboard.png) |
@@ -30,6 +30,7 @@ full index in **[assets/](assets/)**.
 | Template | Produces | Who applies it |
 |---|---|---|
 | `create-service` | a **new github repo** — node app, dockerfile, CI, k8s manifests, servicemonitor, grafana dashboard, techdocs | argocd, on its own |
+| `create-react-app` | same, but a **vite + react** app served by nginx, with an exporter sidecar so a frontend still gets metrics, a dashboard and alerts | argocd, on its own |
 | `request-resource-group` | a **pull request** on team-alpha adding a Crossplane claim | argocd, once merged |
 | `request-database` | same, a PostgreSQL server + db claim | argocd, once merged |
 | `request-keyvault` | same, a Key Vault claim | argocd, once merged |

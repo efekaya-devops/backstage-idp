@@ -6,7 +6,7 @@ raw URL.
 
 | file | what it shows |
 |---|---|
-| `backstage-create.png` | all ten templates in the portal — one golden path, nine infra requests |
+| `backstage-create.png` | all eleven templates — two golden paths, nine infra requests |
 | `backstage-catalog.png` | scaffolded services registered in the catalog |
 | `backstage-resources.png` | requested infrastructure on the catalog as Resources, owned by the team that asked |
 | `argocd-apps.png` | every application synced and healthy, including a team's claims |
