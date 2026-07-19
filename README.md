@@ -16,12 +16,14 @@ full index in **[assets/](assets/)**.
 
 | | |
 |---|---|
-| ![the portal's template list](assets/backstage-create.png) | ![a service in the catalog](assets/backstage-catalog.png) |
-| **The portal.** Every golden path and infra request in one list. | **The catalog.** A scaffolded service registers itself, owner and all. |
+| ![the portal's template list](assets/backstage-create.png) | ![services in the catalog](assets/backstage-catalog.png) |
+| **The portal.** Ten templates: one golden path, nine ways to ask for infrastructure. | **The catalog.** Services register themselves, owner and all. |
+| ![requested infrastructure in the catalog](assets/backstage-resources.png) | ![argocd applications](assets/argocd-apps.png) |
+| **Infrastructure is catalogued too.** Everything a team asked for, with an owner — not just the services. | **ArgoCD.** Every app synced and healthy, including a team's own claims. |
 | ![argocd resource tree](assets/argocd-tree.png) | ![grafana dashboard](assets/grafana-dashboard.png) |
-| **ArgoCD.** It found the repo by itself and synced the whole tree. | **Grafana.** The dashboard nobody created. |
+| **Discovery by convention.** Nobody told ArgoCD this service existed — it found the repo and built the whole tree. | **The dashboard nobody created.** Prometheus scrapes `/metrics`, Grafana's sidecar loads the panel. |
 | ![ServiceDown alert firing](assets/alert-firing.png) | |
-| **Prometheus.** `ServiceDown` firing for real, on a service nobody wrote an alert for. | |
+| **It notices when things break.** `ServiceDown` firing on a service nobody wrote an alert for. | |
 
 ## the templates
 
