@@ -58,9 +58,13 @@ catalog:
   rules:
     - allow: [Component, System, API, Resource, Location, User, Group]
   locations:
-    # the golden path template
+    # the golden paths - a backend service and a frontend
     - type: file
       target: ../../templates/create-service/template.yaml
+      rules:
+        - allow: [Template]
+    - type: file
+      target: ../../templates/create-react-app/template.yaml
       rules:
         - allow: [Template]
     # infra self-service - each of these ends up as a PR on the gitops repo.
