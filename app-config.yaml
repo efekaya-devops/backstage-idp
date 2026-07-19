@@ -63,13 +63,43 @@ catalog:
       target: ../../templates/create-service/template.yaml
       rules:
         - allow: [Template]
-    # infra self-service - both end up as a PR on the gitops repo
+    # infra self-service - all of these end up as a PR on the gitops repo.
+    # crossplane-backed (claims/, continuously reconciled):
     - type: file
       target: ../../templates/request-resource-group/template.yaml
       rules:
         - allow: [Template]
     - type: file
+      target: ../../templates/request-database/template.yaml
+      rules:
+        - allow: [Template]
+    - type: file
+      target: ../../templates/request-keyvault/template.yaml
+      rules:
+        - allow: [Template]
+    - type: file
+      target: ../../templates/request-virtualnetwork/template.yaml
+      rules:
+        - allow: [Template]
+    - type: file
+      target: ../../templates/request-webappplatform/template.yaml
+      rules:
+        - allow: [Template]
+    # terraform-backed (infra/, CI-validated only):
+    - type: file
       target: ../../templates/request-bucket/template.yaml
+      rules:
+        - allow: [Template]
+    - type: file
+      target: ../../templates/request-eks-cluster/template.yaml
+      rules:
+        - allow: [Template]
+    - type: file
+      target: ../../templates/request-gcs-bucket/template.yaml
+      rules:
+        - allow: [Template]
+    - type: file
+      target: ../../templates/request-gke-cluster/template.yaml
       rules:
         - allow: [Template]
     # fake users/groups so ownership shows up somewhere instead of blank

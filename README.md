@@ -1,7 +1,8 @@
 # backstage-idp
 
-The portal side of the platform. Three templates: one that creates a running
-service, two that request infrastructure.
+The portal side of the platform. One template creates a running service, the
+rest request infrastructure — Crossplane claims on the Azure side, Terraform
+module calls for AWS and GCP.
 
 Companion repos:
 [idp-gitops](https://github.com/efekaya-devops/idp-gitops) (cluster, argocd, monitoring) ·
@@ -15,7 +16,22 @@ Companion repos:
 |---|---|---|
 | `create-service` | a **new github repo** — node app, dockerfile, CI, k8s manifests, servicemonitor, grafana dashboard, techdocs | argocd, on its own |
 | `request-resource-group` | a **pull request** on idp-gitops adding a Crossplane claim | argocd, once merged |
-| `request-bucket` | a **pull request** on idp-gitops adding terraform | nothing — CI validates only |
+| `request-database` | same, a PostgreSQL server + db claim | argocd, once merged |
+| `request-keyvault` | same, a Key Vault claim | argocd, once merged |
+| `request-virtualnetwork` | same, a VNet + subnet claim | argocd, once merged |
+| `request-webappplatform` | same, an App Service platform claim | argocd, once merged |
+| `request-bucket` | a **pull request** on idp-gitops adding terraform (`infra/aws/`, S3) | nothing — CI validates only |
+| `request-eks-cluster` | same, an EKS cluster module call | nothing — CI validates only |
+| `request-gcs-bucket` | same, a GCS bucket module call (`infra/gcp/`) | nothing — CI validates only |
+| `request-gke-cluster` | same, a GKE cluster module call | nothing — CI validates only |
+
+Every infra template maps 1:1 to a blueprint the platform team owns: the
+Crossplane ones to an XRD+Composition in
+[crossplane-modules](https://github.com/efekaya-devops/crossplane-modules), the
+Terraform ones to a module in
+[terraform-modules](https://github.com/efekaya-devops/terraform-modules). The
+form fields are the XRD/variable surface — adding a knob to a blueprint and
+exposing it in the form is one small PR in each repo.
 
 The difference is deliberate. A service is yours, so the portal just makes it.
 Infrastructure costs money and belongs to someone else, so the portal opens a PR
