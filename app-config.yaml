@@ -113,11 +113,14 @@ catalog:
   # lands on the catalog without anyone telling the portal about it.
   providers:
     github:
-      idpGitops:
-        organization: efekaya-devops
+      # a team's requested infrastructure, out of the team's own repo. adding
+      # team-beta is another entry here plus an argocd Application - the
+      # templates and blueprints don't change at all.
+      teamAlpha:
+        organization: efekaya-devex-platform
         catalogPath: /catalog/*.yaml
         filters:
-          repository: '^idp-gitops$'
+          repository: '^team-alpha$'
           branch: main
         schedule:
           frequency: { minutes: 1 }

@@ -8,11 +8,11 @@ Companion repos:
 [idp-gitops](https://github.com/efekaya-devops/idp-gitops) (cluster, argocd, monitoring) ·
 [terraform-modules](https://github.com/efekaya-devops/terraform-modules) ·
 [crossplane-modules](https://github.com/efekaya-devops/crossplane-modules) ·
-[platform-docs](https://github.com/efekaya-devops/platform-docs)
+[platform-docs](https://github.com/efekaya-devops/platform-docs) ·
+[team-alpha](https://github.com/efekaya-devex-platform/team-alpha) (a team's requested infra)
 
 ## screenshots
-
-Real runs, not mockups — full index in **[assets/](assets/)**.
+full index in **[assets/](assets/)**.
 
 | | |
 |---|---|
@@ -28,18 +28,18 @@ Real runs, not mockups — full index in **[assets/](assets/)**.
 | Template | Produces | Who applies it |
 |---|---|---|
 | `create-service` | a **new github repo** — node app, dockerfile, CI, k8s manifests, servicemonitor, grafana dashboard, techdocs | argocd, on its own |
-| `request-resource-group` | a **pull request** on idp-gitops adding a Crossplane claim | argocd, once merged |
+| `request-resource-group` | a **pull request** on team-alpha adding a Crossplane claim | argocd, once merged |
 | `request-database` | same, a PostgreSQL server + db claim | argocd, once merged |
 | `request-keyvault` | same, a Key Vault claim | argocd, once merged |
 | `request-virtualnetwork` | same, a VNet + subnet claim | argocd, once merged |
 | `request-webappplatform` | same, an App Service platform claim | argocd, once merged |
-| `request-bucket` | a **pull request** on idp-gitops adding terraform (`infra/aws/`, S3) | nothing — CI validates only |
+| `request-bucket` | a **pull request** on team-alpha adding terraform (`infra/aws/`, S3) | nothing — CI validates only |
 | `request-eks-cluster` | same, an EKS cluster module call | nothing — CI validates only |
 | `request-gcs-bucket` | same, a GCS bucket module call (`infra/gcp/`) | nothing — CI validates only |
 | `request-gke-cluster` | same, a GKE cluster module call | nothing — CI validates only |
 
 Every infra request also writes a `catalog/<name>.yaml` Resource entity into
-the same pull request. The portal scans the gitops repo for `catalog/*.yaml`
+the same pull request. The portal scans the team repo for `catalog/*.yaml`
 (`catalog.providers.github` in app-config), so merging the PR is what puts the
 resource on the catalog — owner, environment tags, a link to the file in git,
 and its dependencies. Same discovery-by-convention as services: nothing

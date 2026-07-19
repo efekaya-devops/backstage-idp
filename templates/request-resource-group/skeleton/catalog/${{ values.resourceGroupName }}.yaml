@@ -12,7 +12,7 @@ metadata:
     - ${{ values.environment }}
   links:
     - title: The claim in git
-      url: https://github.com/efekaya-devops/idp-gitops/blob/main/claims/${{ values.resourceGroupName }}.yaml
+      url: https://github.com/efekaya-devex-platform/team-alpha/blob/main/claims/${{ values.resourceGroupName }}.yaml
 spec:
   type: azure-resource-group
   owner: ${{ values.team }}

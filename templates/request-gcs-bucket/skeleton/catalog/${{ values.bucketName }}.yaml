@@ -16,7 +16,7 @@ metadata:
     - ${{ values.environment }}
   links:
     - title: The terraform in git
-      url: https://github.com/efekaya-devops/idp-gitops/blob/main/infra/gcp/${{ values.bucketName }}.tf
+      url: https://github.com/efekaya-devex-platform/team-alpha/blob/main/infra/gcp/${{ values.bucketName }}.tf
 spec:
   type: gcs-bucket
   owner: ${{ values.team }}

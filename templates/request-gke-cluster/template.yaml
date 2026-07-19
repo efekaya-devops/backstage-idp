@@ -92,7 +92,7 @@ spec:
       name: Open a pull request
       action: publish:github:pull-request
       input:
-        repoUrl: github.com?owner=efekaya-devops&repo=idp-gitops
+        repoUrl: github.com?owner=efekaya-devex-platform&repo=team-alpha
         branchName: gke-${{ parameters.clusterName }}
         title: 'infra: gke cluster ${{ parameters.clusterName }}'
         description: |

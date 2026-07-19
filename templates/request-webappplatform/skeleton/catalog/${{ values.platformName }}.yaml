@@ -14,7 +14,7 @@ metadata:
     - appservice
   links:
     - title: The claim in git
-      url: https://github.com/efekaya-devops/idp-gitops/blob/main/claims/${{ values.platformName }}.yaml
+      url: https://github.com/efekaya-devex-platform/team-alpha/blob/main/claims/${{ values.platformName }}.yaml
 spec:
   type: azure-webapp-platform
   owner: ${{ values.team }}

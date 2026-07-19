@@ -16,7 +16,7 @@ metadata:
     - ${{ values.environment }}
   links:
     - title: The terraform in git
-      url: https://github.com/efekaya-devops/idp-gitops/blob/main/infra/aws/${{ values.clusterName }}.tf
+      url: https://github.com/efekaya-devex-platform/team-alpha/blob/main/infra/aws/${{ values.clusterName }}.tf
 spec:
   type: aws-eks-cluster
   owner: ${{ values.team }}
