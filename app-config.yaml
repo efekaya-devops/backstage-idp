@@ -122,6 +122,17 @@ catalog:
         schedule:
           frequency: { minutes: 1 }
           timeout: { minutes: 3 }
+      # the services the golden path creates. without this they only exist in
+      # whoever's laptop registered them - .data/ is gitignored, so a fresh
+      # clone came up with an empty catalog and no way to know they exist.
+      services:
+        organization: efekaya-devex-platform
+        catalogPath: /catalog-info.yaml
+        filters:
+          branch: main
+        schedule:
+          frequency: { minutes: 1 }
+          timeout: { minutes: 3 }
 
 kubernetes:
   serviceLocatorMethod:
