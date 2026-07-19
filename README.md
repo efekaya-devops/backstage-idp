@@ -62,8 +62,12 @@ cluster from idp-gitops already up.
 ```bash
 cp .env.example .env    # then fill it in, see below
 yarn install
-yarn start              # localhost:3000, sign in as guest
+set -a && . ./.env && set +a   # yarn start does NOT read .env on its own
+yarn start                     # localhost:3000, sign in as guest
 ```
+
+That `set -a` line is not optional — see the first gotcha below for what
+happens without it.
 
 ### .env
 
@@ -89,6 +93,17 @@ idp-gitops/scripts/portal-credentials.sh
 
 ## things that are easy to get wrong
 
+- **`yarn start` does not load `.env`** — there's no dotenv step in the
+  backstage CLI. Without the env vars exported, the kubernetes plugin dies on
+  `Missing required config value at 'kubernetes.clusterLocatorMethods[0].clusters[0].url'`
+  and takes the whole backend down with it. The failure is nastier than it
+  sounds: the catalog gets far enough to register its locations in sqlite,
+  then the process aborts before the processing engine turns them into
+  entities. So the portal keeps serving whatever was ingested the last time it
+  started cleanly, and a newly added template just never shows up — no error
+  in the UI, nothing obviously broken, the catalog is simply frozen in the
+  past. If a template you registered isn't on the Create page, read the
+  backend's startup output before touching anything else.
 - **the catalog is a real sqlite file** (`.data/`), not `:memory:`. With the
   in-memory default every registered service vanishes on restart, which looks
   exactly like the catalog being broken.

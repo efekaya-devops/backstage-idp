@@ -63,7 +63,7 @@ catalog:
       target: ../../templates/create-service/template.yaml
       rules:
         - allow: [Template]
-    # infra self-service - all of these end up as a PR on the gitops repo.
+    # infra self-service - each of these ends up as a PR on the gitops repo.
     # crossplane-backed (claims/, continuously reconciled):
     - type: file
       target: ../../templates/request-resource-group/template.yaml
