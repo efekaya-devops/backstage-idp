@@ -10,6 +10,19 @@ Companion repos:
 [crossplane-modules](https://github.com/efekaya-devops/crossplane-modules) ·
 [platform-docs](https://github.com/efekaya-devops/platform-docs)
 
+## screenshots
+
+Real runs, not mockups — full index in **[assets/](assets/)**.
+
+| | |
+|---|---|
+| ![the portal's template list](assets/backstage-create.png) | ![a service in the catalog](assets/backstage-catalog.png) |
+| **The portal.** Every golden path and infra request in one list. | **The catalog.** A scaffolded service registers itself, owner and all. |
+| ![argocd resource tree](assets/argocd-tree.png) | ![grafana dashboard](assets/grafana-dashboard.png) |
+| **ArgoCD.** It found the repo by itself and synced the whole tree. | **Grafana.** The dashboard nobody created. |
+| ![ServiceDown alert firing](assets/alert-firing.png) | |
+| **Prometheus.** `ServiceDown` firing for real, on a service nobody wrote an alert for. | |
+
 ## the templates
 
 | Template | Produces | Who applies it |
