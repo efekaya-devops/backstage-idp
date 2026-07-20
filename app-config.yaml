@@ -1,8 +1,6 @@
 app:
   title: IDP — Internal Developer Platform
   baseUrl: http://localhost:3000
-  # using our own /create page instead of the default one, see
-  # packages/app/src/modules/scaffolderPage.tsx
   extensions:
     - page:scaffolder: false
 
@@ -19,10 +17,6 @@ backend:
     origin: http://localhost:3000
     methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
     credentials: true
-  # sqlite so the demo doesn't need a real db, but on disk rather than
-  # :memory: - otherwise every service you registered disappears the moment
-  # you restart the portal, which is a horrible surprise mid-demo.
-  # postgres if you ever want more than one backend replica.
   database:
     client: better-sqlite3
     connection:
@@ -44,9 +38,6 @@ scaffolder: {}
 techdocs:
   builder: local
   generator:
-    # docker, not local - "local" shells out to mkdocs and expects python +
-    # mkdocs-techdocs-core installed on the machine running the backend, which
-    # is a rubbish prerequisite for a demo. docker is already needed for kind.
     runIn: docker
   publisher:
     type: local
@@ -112,14 +103,10 @@ catalog:
       rules:
         - allow: [User, Group, System]
   # infra doesn't get registered by hand. this scans the gitops repo for
-  # entity files under catalog/ and picks up whatever is there - the same
-  # discovery-by-convention argocd uses for services, so a merged infra PR
-  # lands on the catalog without anyone telling the portal about it.
+  # entity files under catalog/ and picks up whatever is there 
   providers:
     github:
-      # a team's requested infrastructure, out of the team's own repo. adding
-      # team-beta is another entry here plus an argocd Application - the
-      # templates and blueprints don't change at all.
+      # a team's requested infrastructure
       teamAlpha:
         organization: efekaya-devex-platform
         catalogPath: /catalog/*.yaml
@@ -130,8 +117,7 @@ catalog:
           frequency: { minutes: 1 }
           timeout: { minutes: 3 }
       # the services the golden path creates. without this they only exist in
-      # whoever's laptop registered them - .data/ is gitignored, so a fresh
-      # clone came up with an empty catalog and no way to know they exist.
+      # whoever's laptop registered them
       services:
         organization: efekaya-devex-platform
         catalogPath: /catalog-info.yaml
