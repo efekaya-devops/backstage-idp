@@ -16,12 +16,13 @@ set -euo pipefail
 : "${GITHUB_TOKEN:?set GITHUB_TOKEN - a classic PAT with repo + workflow + read:packages}"
 CERT_EMAIL="${CERT_EMAIL:-}"
 
-# Who may run the scaffolder. Anyone can read the catalog; creating repos with
-# the platform's PAT is limited to this address. Defaults to nobody, which is
-# the right default for a URL linked from a public site - pass your own address
-# when you want to demo the golden path:
-#   ADMIN_CIDR=$(curl -s https://checkip.amazonaws.com)/32
-ADMIN_CIDR="${ADMIN_CIDR:-127.0.0.1/32}"
+# Who may run the scaffolder. Reads are open; writes sit behind a password,
+# because a golden-path run creates a public repo in the org and deploys a pod
+# here. Set SCAFFOLDER_USER/SCAFFOLDER_PASSWORD on the first run to create the
+# htpasswd file; leave them unset afterwards to keep the existing password.
+SCAFFOLDER_USER="${SCAFFOLDER_USER:-admin}"
+SCAFFOLDER_PASSWORD="${SCAFFOLDER_PASSWORD:-}"
+HTPASSWD=/etc/nginx/.htpasswd-scaffolder
 
 DOMAIN="${PUBLIC_URL#https://}"; DOMAIN="${DOMAIN#http://}"; DOMAIN="${DOMAIN%%/*}"
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -119,9 +120,20 @@ sudo systemctl restart backstage
 
 # --- nginx + tls -------------------------------------------------------------
 echo "### nginx"
-echo "    scaffolder writes allowed from: $ADMIN_CIDR"
-sed -e "s/__DOMAIN__/$DOMAIN/g" -e "s#__ADMIN_CIDR__#$ADMIN_CIDR#g" \
-  "$REPO_DIR/deploy/nginx.conf" \
+sudo apt-get install -y -qq apache2-utils >/dev/null
+if [ -n "$SCAFFOLDER_PASSWORD" ]; then
+  sudo htpasswd -bc "$HTPASSWD" "$SCAFFOLDER_USER" "$SCAFFOLDER_PASSWORD"
+  echo "    scaffolder password set for user '$SCAFFOLDER_USER'"
+elif [ ! -f "$HTPASSWD" ]; then
+  # No password anywhere means nginx would 500 on the auth_basic lookup; refuse
+  # rather than leave the golden path broken in a way that looks like a bug.
+  echo "SCAFFOLDER_PASSWORD must be set on the first run (creates $HTPASSWD)" >&2
+  exit 1
+else
+  echo "    keeping the existing scaffolder password"
+fi
+
+sed -e "s/__DOMAIN__/$DOMAIN/g" "$REPO_DIR/deploy/nginx.conf" \
   | sudo tee /etc/nginx/sites-available/backstage >/dev/null
 sudo ln -sf /etc/nginx/sites-available/backstage /etc/nginx/sites-enabled/backstage
 sudo rm -f /etc/nginx/sites-enabled/default
