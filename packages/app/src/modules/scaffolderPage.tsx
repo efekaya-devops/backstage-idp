@@ -32,12 +32,7 @@ const useBannerStyles = makeStyles(theme => ({
   },
 }));
 
-// The hosted demo is read-only: the reverse proxy refuses anything that would
-// write, so pressing Create returns 403. That's deliberate - a golden-path run
-// creates a *public* repo in this GitHub org under a name the visitor chooses,
-// and the ApplicationSet then deploys the result onto the single small box this
-// demo runs on. Saying so up front turns a confusing failure into a documented
-// boundary; the walkthrough recordings show the path actually completing.
+// The hosted demo is read-only: so pressing Create returns 403. That's deliberate - the walkthrough recordings show the path actually completing.
 const ReadOnlyNotice = () => {
   const classes = useBannerStyles();
   return (
