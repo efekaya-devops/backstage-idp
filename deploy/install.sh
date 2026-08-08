@@ -16,6 +16,13 @@ set -euo pipefail
 : "${GITHUB_TOKEN:?set GITHUB_TOKEN - a classic PAT with repo + workflow + read:packages}"
 CERT_EMAIL="${CERT_EMAIL:-}"
 
+# Who may run the scaffolder. Anyone can read the catalog; creating repos with
+# the platform's PAT is limited to this address. Defaults to nobody, which is
+# the right default for a URL linked from a public site - pass your own address
+# when you want to demo the golden path:
+#   ADMIN_CIDR=$(curl -s https://checkip.amazonaws.com)/32
+ADMIN_CIDR="${ADMIN_CIDR:-127.0.0.1/32}"
+
 DOMAIN="${PUBLIC_URL#https://}"; DOMAIN="${DOMAIN#http://}"; DOMAIN="${DOMAIN%%/*}"
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 RUN_DIR="$HOME/backstage-run"
@@ -112,10 +119,24 @@ sudo systemctl restart backstage
 
 # --- nginx + tls -------------------------------------------------------------
 echo "### nginx"
-sed "s/__DOMAIN__/$DOMAIN/g" "$REPO_DIR/deploy/nginx.conf" \
+echo "    scaffolder writes allowed from: $ADMIN_CIDR"
+sed -e "s/__DOMAIN__/$DOMAIN/g" -e "s#__ADMIN_CIDR__#$ADMIN_CIDR#g" \
+  "$REPO_DIR/deploy/nginx.conf" \
   | sudo tee /etc/nginx/sites-available/backstage >/dev/null
 sudo ln -sf /etc/nginx/sites-available/backstage /etc/nginx/sites-enabled/backstage
 sudo rm -f /etc/nginx/sites-enabled/default
+
+# Drop any other enabled site claiming this hostname. nginx serves the first
+# server block that matches, so a leftover config silently wins over this one -
+# and since certbot had attached the TLS listener to the leftover, every HTTPS
+# request was answered by rules this file had already replaced.
+for f in /etc/nginx/sites-enabled/*; do
+  [ "$(basename "$f")" = backstage ] && continue
+  if sudo grep -qs "server_name[[:space:]]\+$DOMAIN;" "$f"; then
+    echo "    removing conflicting site: $(basename "$f")"
+    sudo rm -f "$f" "/etc/nginx/sites-available/$(basename "$f")"
+  fi
+done
 sudo nginx -t
 sudo systemctl reload nginx
 
