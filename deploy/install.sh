@@ -134,7 +134,11 @@ done
 sudo nginx -t
 sudo systemctl reload nginx
 
-if [ -n "$CERT_EMAIL" ] && [ ! -d "/etc/letsencrypt/live/$DOMAIN" ]; then
+# sudo, because /etc/letsencrypt/live is root-only: an unprivileged test always
+# says the certificate is missing, and certbot gets re-run on every deploy. It
+# is idempotent enough to survive that, but Let's Encrypt caps duplicate
+# certificates at five a week, and redeploys are cheap to repeat.
+if [ -n "$CERT_EMAIL" ] && ! sudo test -d "/etc/letsencrypt/live/$DOMAIN"; then
   echo "### certificate"
   sudo certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos -m "$CERT_EMAIL" --redirect
 fi
