@@ -1,0 +1,5 @@
+# production: at least two replicas so a node drain never takes the component down
+environment: production
+replicas:
+  min: ${{ values.minReplicas if values.minReplicas > 2 else 2 }}
+  max: ${{ values.maxReplicas if values.maxReplicas > 2 else 2 }}

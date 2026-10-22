@@ -7,6 +7,7 @@ import {
   SidebarSpace,
 } from '@backstage/core-components';
 import { NavContentBlueprint } from '@backstage/plugin-app-react';
+import AppsIcon from '@material-ui/icons/Apps';
 import { SidebarLogo } from './SidebarLogo';
 import MenuIcon from '@material-ui/icons/Menu';
 import SearchIcon from '@material-ui/icons/Search';
@@ -24,6 +25,8 @@ export const SidebarContent = NavContentBlueprint.make({
 
       // Skipped items
       nav.take('page:search'); // Using search modal instead
+      nav.take('page:app/applications'); // hardcoded below
+      nav.take('page:notifications'); // hardcoded below
 
       return (
         <Sidebar>
@@ -36,7 +39,16 @@ export const SidebarContent = NavContentBlueprint.make({
             {nav.take('page:catalog')}
             {/* Default page:scaffolder is disabled; the app owns /create (see
                 modules/scaffolderPage.tsx) so the Create item is hardcoded here. */}
-            <SidebarItem icon={AddCircleOutlineIcon} to="/create" text="Create..." />
+            <SidebarItem
+              icon={AddCircleOutlineIcon}
+              to="/create"
+              text="Create..."
+            />
+            <SidebarItem
+              icon={AppsIcon}
+              to="/applications"
+              text="Applications"
+            />
             <SidebarDivider />
             <SidebarScrollWrapper>
               {nav.rest({ sortBy: 'title' })}

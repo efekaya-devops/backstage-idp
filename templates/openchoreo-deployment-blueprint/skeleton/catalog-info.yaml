@@ -1,0 +1,20 @@
+# requested through the portal, don't hand-edit - raise a new request instead
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{ values.name }}
+  description: OpenChoreo ${{ values.componentType }} in project ${{ values.project }}, namespace ${{ values.namespace }}.
+  labels:
+    openchoreo.io/managed: "true"
+  annotations:
+    openchoreo.io/project: ${{ values.project }}
+    openchoreo.io/namespace: ${{ values.namespace }}
+    openchoreo.io/component-type: ${{ values.componentType }}
+  links:
+    - title: The chart in git
+      url: https://github.com/efekaya-devex-platform/team-alpha/tree/main/apps/${{ values.name }}/chart
+spec:
+  type: ${{ 'website' if values.componentType == 'web-application' else ('job' if values.componentType == 'scheduled-task' else 'service') }}
+  lifecycle: experimental
+  owner: ${{ values.owner }}
+  system: ${{ values.project }}

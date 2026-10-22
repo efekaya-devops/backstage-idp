@@ -1,0 +1,12 @@
+# The team's OpenChoreo tenancy. A control-plane namespace holds OpenChoreo's own
+# objects (Environments, DeploymentPipeline, and OpenChoreo-native Components/
+# Workloads); workloads do not run here. Apply once per team.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${{ values.name }}
+  labels:
+    openchoreo.dev/control-plane: "true"
+  annotations:
+    openchoreo.dev/display-name: ${{ (values.displayName or values.name) | dump }}
+    openchoreo.dev/description: ${{ (values.description or ('Team namespace ' + values.name)) | dump }}

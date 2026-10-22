@@ -1,0 +1,25 @@
+{{- if ne (include "app.isTask" .) "true" }}
+{{- if gt (int .Values.replicas.min) (int .Values.replicas.max) }}
+{{- fail (printf "replicas.min (%v) must not exceed replicas.max (%v)" .Values.replicas.min .Values.replicas.max) }}
+{{- end }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "app.name" . }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "app.name" . }}
+  minReplicas: {{ .Values.replicas.min }}
+  maxReplicas: {{ .Values.replicas.max }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 75
+{{- end }}

@@ -1,0 +1,30 @@
+/* Token overrides for @backstage/ui components, one block per theme in themes.ts. */
+[data-theme-name='navy-frame'] {
+  --bui-bg-app: #f3f6fb;
+  --bui-bg-solid: #3b5bdb;
+  --bui-bg-solid-hover: #2f4ab8;
+  --bui-bg-solid-pressed: #243a94;
+  --bui-fg-solid: #ffffff;
+  --bui-ring: #3b5bdb;
+}
+
+[data-theme-name='abyssal-blue'] {
+  --bui-bg-app: #0b1324;
+  --bui-bg-solid: #4f8cff;
+  --bui-bg-solid-hover: #6a9eff;
+  --bui-bg-solid-pressed: #3d77e6;
+  --bui-fg-solid: #08101f;
+  --bui-ring: #4f8cff;
+}
+
+/* BUI toasts render in a portal that forces dark mode, so they picked up BUI's grey and
+   orange defaults (about 4:1). Pin them to the navy surface with AA-contrast status colours. */
+[data-theme-name] [class*='Toast_container__'] {
+  --bui-bg-app: #0f1c38;
+  --bui-border-1: #27407a;
+  --bui-fg-primary: #ffffff;
+  --bui-fg-danger: #ff9a85;
+  --bui-fg-warning: #ffc857;
+  --bui-fg-success: #6fe3a5;
+  --bui-fg-info: #8fb3f0;
+}

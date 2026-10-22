@@ -1,0 +1,117 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: blueprint-webapp-platform
+  title: Web App Platform Blueprint (Azure)
+  description: >-
+    A multi-module blueprint: one claim composes an App Service plan, a Linux
+    web app and Application Insights from the shared webappplatform Crossplane
+    module. Everything lands in West Europe (the composition fixes the region).
+    Pick a size tier and an environment. The portal opens a pull request on
+    the team repo; merging it lets ArgoCD apply the claim. The portal never
+    holds cloud credentials.
+  tags:
+    - blueprint
+    - crossplane
+    - azure
+    - appservice
+    - observability
+spec:
+  owner: platform-team
+  type: blueprint
+
+  parameters:
+    - title: Platform
+      description: Name, ownership and the resource group the modules land in.
+      required:
+        - platformName
+        - resourceGroup
+        - team
+        - environment
+      properties:
+        platformName:
+          title: Platform name
+          type: string
+          description: Lowercase letters and digits only, 3-18 characters. Every module's resource name is derived from it.
+          pattern: '^[a-z0-9]{3,18}$'
+          default: checkoutweb
+          ui:autofocus: true
+          ui:help: No hyphens, because the blueprint XRD only accepts ^[a-z0-9]{3,18}$.
+        resourceGroup:
+          title: Resource group (existing)
+          type: string
+          description: The Azure resource group for this platform.
+          pattern: '^[a-z][a-z0-9-]{1,30}[a-z0-9]$'
+          default: rg-checkout-dev
+          ui:help: Must already exist. Request one first with a resource-group claim if you need it.
+        environment:
+          title: Environment
+          type: string
+          default: dev
+          enum: [dev, test, acc, prod]
+          enumNames: [Development, Test, Acceptance, Production]
+          ui:help: Recorded on the catalog entity and in the PR; the blueprint itself is environment-agnostic.
+        team:
+          title: Owning team
+          type: string
+          default: group:default/team-alpha
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+    - title: Size and placement
+      description: Tier for the App Service plan and the image the web app starts with.
+      properties:
+        size:
+          title: Size tier
+          type: string
+          default: S
+          enum: [S, M, L]
+          enumNames:
+            - S - B1 (1 core, 1.75 GiB), dev and demos
+            - M - S1 (1 core, 1.75 GiB), staging, slots and autoscale
+            - L - P1v3 (2 vCPU, 8 GiB), production
+          ui:help: Maps to the XRD's planSku (S=B1, M=S1, L=P1v3).
+        containerImage:
+          title: Container image
+          type: string
+          default: nginxdemos/hello:latest
+          ui:help: The web app starts with this image. Your CI replaces it later.
+
+  steps:
+    - id: fetch
+      name: Render the claim
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          platformName: ${{ parameters.platformName }}
+          resourceGroup: ${{ parameters.resourceGroup }}
+          size: ${{ parameters.size }}
+          containerImage: ${{ parameters.containerImage }}
+          environment: ${{ parameters.environment }}
+          team: ${{ parameters.team | parseEntityRef | pick('name') }}
+
+    - id: pr
+      name: Open a pull request
+      action: publish:github:pull-request
+      input:
+        repoUrl: github.com?owner=efekaya-devex-platform&repo=team-alpha
+        branchName: blueprint-${{ parameters.platformName }}
+        title: 'infra: web app platform ${{ parameters.platformName }}'
+        description: |
+          Requested via the portal by the ${{ parameters.team }} team.
+
+          Blueprint modules: App Service plan, Linux web app, Application Insights.
+
+          - resource group: `${{ parameters.resourceGroup }}`
+          - size tier: `${{ parameters.size }}`
+          - region: West Europe (fixed by the composition)
+          - environment: `${{ parameters.environment }}`
+
+          Merging this applies the claim via ArgoCD.
+
+  output:
+    links:
+      - title: Review the pull request
+        url: ${{ steps['pr'].output.remoteUrl }}

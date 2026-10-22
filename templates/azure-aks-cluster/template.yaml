@@ -1,0 +1,118 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: azure-aks-cluster
+  title: Azure AKS Cluster
+  description: >-
+    Request an Azure Kubernetes Service cluster as a call to the shared
+    aks-cluster Terraform module (OIDC issuer and workload identity enabled).
+    The portal opens a pull request with the module call for review; applying
+    it is out of scope for the demo. The portal never holds Azure credentials.
+  tags:
+    - infrastructure
+    - terraform
+    - azure
+    - kubernetes
+spec:
+  owner: platform-team
+  type: infrastructure
+
+  parameters:
+    - title: Cluster
+      description: Identity and ownership of the cluster.
+      required:
+        - clusterName
+        - team
+        - environment
+      properties:
+        clusterName:
+          title: Cluster name
+          type: string
+          description: Unique, lowercase and hyphenated. Prefixes the AKS cluster and resource group names.
+          pattern: '^[a-z][a-z0-9-]{1,30}[a-z0-9]$'
+          default: checkout-dev
+          ui:autofocus: true
+          ui:help: 2-32 characters. The module creates rg-<name>, rg-<name>-shared and aks-<name>.
+        environment:
+          title: Environment
+          type: string
+          default: dev
+          enum: [dev, test, acc, prod]
+          enumNames: [Development, Test, Acceptance, Production]
+        team:
+          title: Owning team
+          type: string
+          default: group:default/team-alpha
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+    - title: Placement and capacity
+      description: Region, control-plane tier and system node pool.
+      properties:
+        location:
+          title: Azure region
+          type: string
+          default: westeurope
+          enum: [westeurope, northeurope, germanywestcentral, swedencentral]
+          enumNames: [West Europe (NL), North Europe (IE), Germany West Central, Sweden Central]
+        skuTier:
+          title: Control-plane tier
+          type: string
+          default: Free
+          enum: [Free, Standard]
+          enumNames: [Free (no SLA), Standard (uptime SLA)]
+          ui:help: Free is fine for dev and test. Large clusters or production need Standard, since the Free API server throttles under load.
+        nodeVmSize:
+          title: Node VM size
+          type: string
+          default: Standard_B2ms
+          enum: [Standard_B2ms, Standard_D2s_v5, Standard_D4s_v5]
+          enumNames:
+            - B2ms (2 vCPU, 8 GiB, burstable)
+            - D2s v5 (2 vCPU, 8 GiB)
+            - D4s v5 (4 vCPU, 16 GiB)
+        nodeCount:
+          title: Number of system nodes
+          type: number
+          default: 1
+          minimum: 1
+          maximum: 10
+
+  steps:
+    - id: fetch
+      name: Render the Terraform
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          clusterName: ${{ parameters.clusterName }}
+          location: ${{ parameters.location }}
+          skuTier: ${{ parameters.skuTier }}
+          nodeVmSize: ${{ parameters.nodeVmSize }}
+          nodeCount: ${{ parameters.nodeCount }}
+          environment: ${{ parameters.environment }}
+          team: ${{ parameters.team | parseEntityRef | pick('name') }}
+
+    - id: pr
+      name: Open a pull request
+      action: publish:github:pull-request
+      input:
+        repoUrl: github.com?owner=efekaya-devex-platform&repo=team-alpha
+        branchName: aks-${{ parameters.clusterName }}
+        title: 'infra: aks cluster ${{ parameters.clusterName }}'
+        description: |
+          Requested via the portal by the ${{ parameters.team }} team.
+
+          - region: `${{ parameters.location }}`
+          - tier: `${{ parameters.skuTier }}`
+          - node size: `${{ parameters.nodeVmSize }}`
+          - node count: `${{ parameters.nodeCount }}`
+          - environment: `${{ parameters.environment }}`
+
+          Uses the shared `aks-cluster` module. Opened for review only; nothing validates or applies it in the demo.
+
+  output:
+    links:
+      - title: Review the pull request
+        url: ${{ steps['pr'].output.remoteUrl }}

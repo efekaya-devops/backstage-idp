@@ -1,0 +1,227 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: openchoreo-namespace
+  title: OpenChoreo Team Namespace with Guardrails
+  description: >-
+    Onboard a team onto OpenChoreo in two parts. openchoreo/ is the team's
+    OpenChoreo tenancy, applied once: a control-plane namespace with the
+    development, staging and production Environments and the promotion
+    pipeline, for OpenChoreo-native components. runtime/ is one guarded
+    namespace per environment (name-development, name-staging,
+    name-production) for Helm and kustomize workloads: Pod Security Admission
+    restricted, quota and limit range sized per environment, default-deny
+    network policies with DNS and in-namespace traffic allowed, RBAC for the
+    owning and reading groups, and an External Secrets store wired to your
+    secret backend. Opened as a pull request on idp-gitops.
+  tags:
+    - openchoreo
+    - kustomize
+    - guardrails
+    - multi-tenancy
+    - security
+spec:
+  owner: platform-team
+  type: openchoreo
+
+  parameters:
+    - title: Namespace
+      description: Name and ownership of the team namespace.
+      required:
+        - name
+        - owner
+        - readers
+      properties:
+        name:
+          title: Namespace name
+          type: string
+          description: Lowercase and hyphenated. This becomes the OpenChoreo namespace, the prefix of the three runtime namespaces (`<name>-development`, `<name>-staging`, `<name>-production`) and the folder `tenants/<name>/`.
+          pattern: '^[a-z][a-z0-9-]{1,30}[a-z0-9]$'
+          default: team-payments
+          ui:autofocus: true
+          ui:help: 3-32 characters, starts with a letter, no trailing hyphen.
+        displayName:
+          title: Display name
+          type: string
+          description: Shown in the OpenChoreo console.
+          default: Team Payments
+        description:
+          title: Description
+          type: string
+          description: One line on what this team or namespace is for.
+          default: Payments services for the checkout flow
+        owner:
+          title: Owning group
+          type: string
+          description: Gets the edit role in each runtime namespace.
+          default: group:default/team-alpha
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+          ui:help: The group name must match the group claim your identity provider issues, because RBAC binds to it by name.
+        readers:
+          title: Readers group
+          type: string
+          description: Gets the view role in each runtime namespace.
+          default: group:default/platform-team
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+    - title: Platform wiring
+      description: Where OpenChoreo lives in the cluster.
+      properties:
+        dataPlane:
+          title: Cluster data plane
+          type: string
+          default: default
+          description: Name of the ClusterDataPlane the environments deploy to.
+    - title: Secrets
+      description: The secret backend External Secrets Operator reads from, as a SecretStore named platform-secrets in each runtime namespace.
+      required:
+        - secretProvider
+      properties:
+        secretProvider:
+          title: Secret provider
+          type: string
+          default: azure-keyvault
+          enum: [azure-keyvault, aws-secrets-manager, stackit-secrets-manager, hashicorp-vault]
+          enumNames:
+            - Azure Key Vault (workload identity)
+            - AWS Secrets Manager (IRSA)
+            - STACKIT Secrets Manager (EU sovereign)
+            - HashiCorp Vault (Kubernetes auth)
+      dependencies:
+        secretProvider:
+          oneOf:
+            - properties:
+                secretProvider: { const: azure-keyvault }
+                vaultUrl:
+                  title: Key Vault URL
+                  type: string
+                  pattern: '^https://[a-z0-9-]{3,24}\.vault\.azure\.net/?$'
+                  default: https://kv-payments-dev.vault.azure.net/
+                  ui:help: e.g. https://kv-team.vault.azure.net
+                identityClientId:
+                  title: Workload identity client ID
+                  type: string
+                  default: 9b1e4c7a-2d3f-4a58-b6c1-0e5f7a8d9c21
+                  pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+                  ui:help: Client ID of the managed identity federated with the external-secrets service account in this namespace, with Key Vault Secrets User on the vault.
+              required: [vaultUrl, identityClientId]
+            - properties:
+                secretProvider: { const: aws-secrets-manager }
+                awsRegion:
+                  title: AWS region
+                  type: string
+                  default: eu-west-1
+                  enum: [eu-west-1, eu-central-1, eu-north-1]
+                roleArn:
+                  title: IAM role ARN
+                  type: string
+                  pattern: '^arn:aws:iam::[0-9]{12}:role/.+$'
+                  default: arn:aws:iam::123456789012:role/eso-team-payments
+                  ui:help: Role assumed through IRSA by the service account in this namespace, allowed secretsmanager:GetSecretValue.
+              required: [awsRegion, roleArn]
+            - properties:
+                secretProvider: { const: stackit-secrets-manager }
+                stackitInstanceId:
+                  title: Secrets Manager instance ID
+                  type: string
+                  default: 5d8a2f61-7c40-4e93-a1b2-3f6e9d0c4b17
+                  pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+                  ui:help: The instance ID is the Vault mount path (KV v2) in region eu01.
+                stackitUsername:
+                  title: Secrets Manager username
+                  type: string
+                  default: eso-team-payments
+                  ui:help: A STACKIT Secrets Manager user. Create the Secret stackit-secrets-manager-credentials (key password) in the namespace out of band; it never goes in git.
+              required: [stackitInstanceId, stackitUsername]
+            - properties:
+                secretProvider: { const: hashicorp-vault }
+                vaultServer:
+                  title: Vault address
+                  type: string
+                  pattern: '^https?://.+$'
+                  default: https://vault.demo.efekaya.io
+                vaultMountPath:
+                  title: KV v2 mount path
+                  type: string
+                  default: secret
+                vaultRole:
+                  title: Kubernetes auth role
+                  type: string
+                  default: team-payments-reader
+                  ui:help: Vault role bound to the secrets-reader service account in this namespace.
+              required: [vaultServer, vaultMountPath, vaultRole]
+    - title: Sizing
+      description: Each runtime namespace gets its own quota; review them in the pull request.
+      properties:
+        sizing:
+          title: Quota profile
+          type: string
+          default: standard
+          enum: [small, standard, large]
+          enumNames:
+            - Small (dev 1 CPU, prod 4 CPU requests)
+            - Standard (dev 2 CPU, prod 8 CPU requests)
+            - Large (dev 4 CPU, prod 16 CPU requests)
+
+  steps:
+    - id: fetch
+      name: Render the tenant
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          displayName: ${{ parameters.displayName }}
+          description: ${{ parameters.description }}
+          owner: ${{ parameters.owner | parseEntityRef | pick('name') }}
+          readers: ${{ parameters.readers | parseEntityRef | pick('name') }}
+          dataPlane: ${{ parameters.dataPlane }}
+          secretProvider: ${{ parameters.secretProvider }}
+          vaultUrl: ${{ parameters.vaultUrl }}
+          identityClientId: ${{ parameters.identityClientId }}
+          awsRegion: ${{ parameters.awsRegion }}
+          roleArn: ${{ parameters.roleArn }}
+          stackitInstanceId: ${{ parameters.stackitInstanceId }}
+          stackitUsername: ${{ parameters.stackitUsername }}
+          vaultServer: ${{ parameters.vaultServer }}
+          vaultMountPath: ${{ parameters.vaultMountPath }}
+          vaultRole: ${{ parameters.vaultRole }}
+          sizing: ${{ parameters.sizing }}
+        targetPath: tenants/${{ parameters.name }}
+
+    - id: pr
+      name: Open a pull request
+      action: publish:github:pull-request
+      input:
+        repoUrl: github.com?owner=efekaya-devops&repo=idp-gitops
+        branchName: oc-ns-${{ parameters.name }}
+        title: 'tenant: openchoreo namespace ${{ parameters.name }}'
+        description: |
+          Requested via the portal for the ${{ parameters.owner }} group.
+
+          Adds `tenants/${{ parameters.name }}/` in two parts:
+
+          - `openchoreo/`: control-plane namespace `${{ parameters.name }}` with the development, staging and production Environments and the promotion DeploymentPipeline (apply once; for OpenChoreo-native components)
+          - `runtime/overlays/{development,staging,production}`: one guarded namespace each, `${{ parameters.name }}-<env>`, for Helm and kustomize workloads
+
+          Each runtime namespace has:
+
+          - Pod Security Admission `restricted`
+          - ResourceQuota and LimitRange (profile `${{ parameters.sizing }}`)
+          - default-deny NetworkPolicies with DNS and in-namespace traffic allowed; apps open their own ingress through their chart
+          - RoleBindings: owner `edit`, readers `view`
+          - External Secrets store `platform-secrets` (`${{ parameters.secretProvider }}`)
+
+          Nothing applies `tenants/` automatically until ArgoCD Applications point at `openchoreo/` and the three overlays.
+
+          After this PR is merged, the team appears in the catalog on the next discovery refresh (about a minute).
+
+  output:
+    links:
+      - title: Review the pull request
+        url: ${{ steps['pr'].output.remoteUrl }}

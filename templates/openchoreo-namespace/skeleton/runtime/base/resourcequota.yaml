@@ -1,0 +1,16 @@
+# sized per environment by the overlays
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: guardrails
+spec:
+  hard:
+    requests.cpu: "2"
+    requests.memory: 4Gi
+    limits.cpu: "4"
+    limits.memory: 8Gi
+    pods: "30"
+    services: "20"
+    persistentvolumeclaims: "10"
+    services.loadbalancers: "0"
+    services.nodeports: "0"

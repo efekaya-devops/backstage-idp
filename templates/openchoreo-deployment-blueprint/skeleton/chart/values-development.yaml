@@ -1,0 +1,9 @@
+# development: smallest footprint, hostname prefixed
+environment: development
+replicas:
+  min: 1
+  max: ${{ 2 if values.maxReplicas > 2 else values.maxReplicas }}
+{%- if values.exposure == 'public' %}
+exposure:
+  hostname: ${{ ('dev.' + values.hostname) | dump }}
+{%- endif %}

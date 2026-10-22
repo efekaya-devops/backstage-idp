@@ -1,5 +1,7 @@
 import { createBackend } from '@backstage/backend-defaults';
 
+import { readOnlyDemoPolicy, stripEditUrl } from './readOnlyDemo';
+
 const backend = createBackend();
 
 backend.add(import('@backstage/plugin-app-backend'));
@@ -29,9 +31,9 @@ backend.add(import('@backstage/plugin-catalog-backend-module-github'));
 
 // permission plugin
 backend.add(import('@backstage/plugin-permission-backend'));
-backend.add(
-  import('@backstage/plugin-permission-backend-module-allow-all-policy'),
-);
+// allow-all unless app.readOnlyDemo is set, then no create/update/delete
+backend.add(readOnlyDemoPolicy);
+backend.add(stripEditUrl);
 
 // search plugin
 backend.add(import('@backstage/plugin-search-backend'));

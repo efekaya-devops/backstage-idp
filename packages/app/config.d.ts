@@ -14,4 +14,12 @@ export interface Config {
      */
     readOnlyDemo?: boolean;
   };
+  openchoreo?: {
+    /**
+     * Shows an "Open console" button on the Applications page when set.
+     *
+     * @visibility frontend
+     */
+    consoleUrl?: string;
+  };
 }

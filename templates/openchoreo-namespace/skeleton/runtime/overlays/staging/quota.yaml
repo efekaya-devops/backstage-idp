@@ -1,0 +1,15 @@
+{%- set cpu = {'small': 2, 'standard': 4, 'large': 8} %}
+{%- set mem = {'small': 4, 'standard': 8, 'large': 16} %}
+{%- set pods = {'small': 20, 'standard': 50, 'large': 100} %}
+{%- set size = values.sizing or 'standard' %}
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: guardrails
+spec:
+  hard:
+    requests.cpu: "${{ cpu[size] }}"
+    requests.memory: ${{ mem[size] }}Gi
+    limits.cpu: "${{ cpu[size] * 2 }}"
+    limits.memory: ${{ mem[size] * 2 }}Gi
+    pods: "${{ pods[size] }}"

@@ -1,7 +1,7 @@
 # backstage-idp
 
-The portal side of the platform. Two golden paths create running apps — a
-backend service and a React frontend — and the rest request infrastructure:
+The portal side of the platform. One golden path creates a running app — a
+backend service or a React frontend — and the rest request infrastructure:
 Crossplane claims on the Azure side, Terraform module calls for AWS and GCP.
 
 Companion repos:
@@ -17,7 +17,7 @@ full index in **[assets/](assets/)**.
 | | |
 |---|---|
 | ![the portal's template list](assets/backstage-create.png) | ![services in the catalog](assets/backstage-catalog.png) |
-| **The portal.** Eleven templates: two golden paths, nine ways to ask for infrastructure. | **The catalog.** Services register themselves, owner and all. |
+| **The portal.** Eight templates: one golden path, a CI building block, a web app blueprint, three cloud clusters and two OpenChoreo templates (previous portal). | **The catalog.** Services register themselves, owner and all. |
 | ![requested infrastructure in the catalog](assets/backstage-resources.png) | ![argocd applications](assets/argocd-apps.png) |
 | **Infrastructure is catalogued too.** Everything a team asked for, with an owner — not just the services. | **ArgoCD.** Every app synced and healthy, including a team's own claims. |
 | ![argocd resource tree](assets/argocd-tree.png) | ![grafana dashboard](assets/grafana-dashboard.png) |
@@ -27,19 +27,21 @@ full index in **[assets/](assets/)**.
 
 ## the templates
 
-| Template | Produces | Who applies it |
-|---|---|---|
-| `create-service` | a **new github repo** — node app, dockerfile, CI, k8s manifests, servicemonitor, grafana dashboard, techdocs | argocd, on its own |
-| `create-react-app` | same, but a **vite + react** app served by nginx, with an exporter sidecar so a frontend still gets metrics, a dashboard and alerts | argocd, on its own |
-| `request-resource-group` | a **pull request** on team-alpha adding a Crossplane claim | argocd, once merged |
-| `request-database` | same, a PostgreSQL server + db claim | argocd, once merged |
-| `request-keyvault` | same, a Key Vault claim | argocd, once merged |
-| `request-virtualnetwork` | same, a VNet + subnet claim | argocd, once merged |
-| `request-webappplatform` | same, an App Service platform claim | argocd, once merged |
-| `request-bucket` | a **pull request** on team-alpha adding terraform (`infra/aws/`, S3) | nothing — CI validates only |
-| `request-eks-cluster` | same, an EKS cluster module call | nothing — CI validates only |
-| `request-gcs-bucket` | same, a GCS bucket module call (`infra/gcp/`) | nothing — CI validates only |
-| `request-gke-cluster` | same, a GKE cluster module call | nothing — CI validates only |
+Eight templates, one golden path (Node.js API or React frontend).
+
+| Template | Type | Produces | Who applies it |
+|---|---|---|---|
+| `cicd-building-block` | building-block | a **pull request** on an existing repo adding `.github/workflows/ci.yml`, a caller of the shared `building-block-ci` reusable workflow: build and test, Trivy gate, SBOM, optional multi-arch GHCR image, optional GitOps tag bump | GitHub Actions in that repo, once the PR is merged |
+| `blueprint-webapp-platform` | blueprint | a pull request on team-alpha with a Crossplane claim composing App Service plan, web app and Application Insights (West Europe), sized S/M/L | ArgoCD: team-alpha `claims/` is synced by `apps/infra-team-alpha.yaml` |
+| `azure-aks-cluster` | infrastructure | a pull request adding a call to the `aks-cluster` Terraform module (`infra/azure/`) | Nobody on the demo: the PR is opened for review, never applied or validated |
+| `aws-eks-cluster` | infrastructure | a pull request adding a call to the `aws-eks` Terraform module (`infra/aws/`) | Nobody on the demo: team-alpha CI runs fmt and validate, but nothing applies it |
+| `stackit-ske-cluster` | infrastructure | a pull request adding a call to the `stackit-ske` Terraform module (`infra/stackit/`), the sovereign EU option | Nobody on the demo: the PR is opened for review, never applied or validated |
+| `openchoreo-namespace` | openchoreo | a pull request on idp-gitops adding `tenants/<ns>/`: kustomize base and per-environment overlays with quotas, network policies, RBAC and an External Secrets store | Nobody today: ArgoCD does not sync idp-gitops `tenants/` |
+| `openchoreo-deployment-blueprint` | openchoreo | a pull request on team-alpha adding `apps/<name>/`: a Helm chart with per-environment values, plus the catalog Component | Nobody today: ArgoCD does not sync team-alpha `apps/` |
+| `golden-path` | service | a **new github repo** (in `efekaya-devex-platform`), Node.js API or React frontend: tests, the reusable CI workflow (PR gating, Trivy gate, SBOM, multi-arch image), GitOps deploy via "deploy <sha>" PRs, hardened k8s manifests, servicemonitor, grafana dashboard, techdocs | ArgoCD: the `services` ApplicationSet discovers the repo's `k8s/` folder |
+
+Terraform pull requests are opened but never applied on the demo. The
+screenshots in `assets/` show the previous portal and have not been regenerated.
 
 Every infra request also writes a `catalog/<name>.yaml` Resource entity into
 the same pull request. The portal scans the team repo for `catalog/*.yaml`
@@ -154,7 +156,7 @@ idp-gitops/scripts/portal-credentials.sh
 
 ```
 packages/app/src/modules/   nav, sign-in, home, scaffolder page customisations
-templates/create-service/   the golden path
-templates/request-*/        the infra request templates
+templates/golden-path/      the golden path
+templates/*/                building blocks, blueprints, infrastructure and OpenChoreo templates
 app-config.yaml             catalog locations, kubernetes, techdocs
 ```
