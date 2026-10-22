@@ -1,93 +1,54 @@
-import {
-  Content,
-  Header,
-  Page,
-} from '@backstage/core-components';
+import { Content, Header, Page } from '@backstage/core-components';
+import { configApiRef, useApi } from '@backstage/core-plugin-api';
+import { Grid } from '@material-ui/core';
+import { Iceberg } from '../nav/Iceberg';
+import { QuickActions } from './components/QuickActions';
+import { DashboardSection } from './components/DashboardSection';
+import { FavoritesWidget } from './components/widgets/FavoritesWidget';
+import { TemplatesWidget } from './components/widgets/TemplatesWidget';
 
-import {
-  Grid,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-} from '@material-ui/core';
+const SUBTITLE =
+  'Self-service platform: create services and cloud resources from templates, run them as applications, find everything in one catalog.';
 
-import { Link } from 'react-router-dom';
+// The widget rows. Each entry is a self-contained data widget; adding another
+// is one line here, which is the whole point of the modular layout.
+const workspaceWidgets = [TemplatesWidget, FavoritesWidget];
 
+/**
+ * The landing page at `/`. Purely compositional: the action sections and the
+ * live widget rows each own their own data and layout, so adding a future
+ * widget is one more entry in the arrays above — nothing else here changes.
+ */
 export function HomePage() {
+  const title =
+    useApi(configApiRef).getOptionalString('app.title') ?? 'Platform';
   return (
     <Page themeId="home">
       <Header
-        title="Internal Developer Platform"
-        subtitle="Welcome to the developer portal"
+        pageTitleOverride={title}
+        title={
+          <span
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 14 }}
+          >
+            <Iceberg height={44} />
+            {title}
+          </span>
+        }
+        subtitle={SUBTITLE}
       />
-
       <Content>
+        <Grid container spacing={4}>
+          <QuickActions />
 
-        <Grid container spacing={3}>
-
-          <Grid item xs={12}>
-            <Typography variant="h5">
-              Quick Actions
-            </Typography>
-          </Grid>
-
-          <Grid item md={4}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6">
-                  Create Service
-                </Typography>
-
-                <Button
-                  component={Link}
-                  to="/create"
-                  variant="contained"
-                  color="primary"
-                >
-                  Open
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item md={4}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6">
-                  Software Catalog
-                </Typography>
-
-                <Button
-                  component={Link}
-                  to="/catalog"
-                  variant="contained"
-                >
-                  Browse
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item md={4}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6">
-                  Kubernetes
-                </Typography>
-
-                <Button
-                  component={Link}
-                  to="/catalog?filters[kind]=component"
-                >
-                  Explore
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
+          <DashboardSection title="Your workspace">
+            {workspaceWidgets.map(Widget => (
+              <Grid item xs={12} md={6} key={Widget.name}>
+                <Widget />
+              </Grid>
+            ))}
+          </DashboardSection>
 
         </Grid>
-
       </Content>
     </Page>
   );

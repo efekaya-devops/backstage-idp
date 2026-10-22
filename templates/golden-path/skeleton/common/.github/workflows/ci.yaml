@@ -1,0 +1,30 @@
+name: ci
+on:
+  push:
+    branches: [main]
+    # merging a deploy PR only changes k8s/, so it must not rebuild
+    paths-ignore: ['k8s/**', 'docs/**', '**/*.md']
+  # PRs build, test and scan only; the shared workflow skips the image push and bump
+  pull_request:
+    branches: [main]
+    paths-ignore: ['k8s/**', 'docs/**', '**/*.md']
+jobs:
+  ci:
+    # the called workflow can only use the permissions granted here
+    permissions:
+      contents: write
+      packages: write
+      pull-requests: write
+    # pin a tag or SHA once the repo has one
+    uses: efekaya-devops/backstage-idp/.github/workflows/building-block-ci.yml@main
+    with:
+      runtime: node
+      runtime-version: "22"
+      build-image: true
+      platforms: linux/amd64,linux/arm64
+      trivy-severity: CRITICAL,HIGH
+      sbom: true
+      # same repo: the bump PR edits k8s/kustomization.yaml, no extra token
+      gitops-repo: ${{ '${{ github.repository }}' }}
+      gitops-values-path: k8s/kustomization.yaml
+      gitops-image-tag-key: .images[0].newTag

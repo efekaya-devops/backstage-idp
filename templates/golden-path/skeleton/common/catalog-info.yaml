@@ -1,0 +1,21 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{ values.name }}
+  description: ${{ values.description }}
+{%- if values.flavour == 'react-frontend' %}
+  tags:
+    - react
+    - frontend
+{%- endif %}
+  annotations:
+    github.com/project-slug: ${{ values.destination.owner }}/${{ values.destination.repo }}
+    backstage.io/kubernetes-label-selector: app=${{ values.name }}
+    backstage.io/techdocs-ref: dir:.
+spec:
+  type: ${{ 'website' if values.flavour == 'react-frontend' else 'service' }}
+  lifecycle: experimental
+  owner: ${{ values.owner }}
+{%- if values.system %}
+  system: ${{ values.system }}
+{%- endif %}

@@ -1,0 +1,177 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: cicd-building-block
+  title: CI/CD Building Block
+  description: >-
+    Add a standard pipeline to an existing repository through a pull request:
+    build and test for your runtime, a Trivy vulnerability gate, an SBOM, an
+    optional multi-arch container image on GHCR and an optional GitOps image
+    tag bump (needs the image). The generated workflow is a thin caller of one shared reusable
+    workflow, so pipeline fixes reach every repo without re-running this form.
+  tags:
+    - building-block
+    - ci-cd
+    - github-actions
+    - security
+spec:
+  owner: platform-team
+  type: building-block
+
+  parameters:
+    - title: Repository
+      description: The existing repository that gets the pipeline.
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Repository
+          type: string
+          default: github.com?owner=efekaya-devex-platform&repo=checkout-api
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+            allowedOwners:
+              - efekaya-devops
+              - efekaya-devex-platform
+    - title: Build and test
+      description: Pick the runtime the repository is built with.
+      required:
+        - runtime
+      properties:
+        runtime:
+          title: Runtime
+          type: string
+          default: node
+          enum: [node, python, go, java, dotnet]
+          enumNames: [Node.js, Python, Go, "Java (Maven or Gradle)", ".NET"]
+      dependencies:
+        runtime:
+          oneOf:
+            - properties:
+                runtime: { const: node }
+                runtimeVersion: { title: Node.js version, type: string, default: "20", enum: ["18", "20", "22"] }
+            - properties:
+                runtime: { const: python }
+                runtimeVersion: { title: Python version, type: string, default: "3.12", enum: ["3.10", "3.11", "3.12", "3.13"] }
+            - properties:
+                runtime: { const: go }
+                runtimeVersion: { title: Go version, type: string, default: "1.22", enum: ["1.21", "1.22", "1.23"] }
+            - properties:
+                runtime: { const: java }
+                runtimeVersion: { title: Java version, type: string, default: "21", enum: ["17", "21"] }
+            - properties:
+                runtime: { const: dotnet }
+                runtimeVersion: { title: .NET version, type: string, default: "8.0", enum: ["6.0", "8.0", "9.0"] }
+    - title: Container image
+      description: Optionally build and push an image to GitHub Container Registry, and bump a GitOps repo with the new tag.
+      properties:
+        buildImage:
+          title: Build a container image
+          type: boolean
+          default: true
+          ui:help: Needs a Dockerfile in the repository root. Pushes happen on the default branch only; pull requests build without pushing.
+      dependencies:
+        buildImage:
+          oneOf:
+            - properties:
+                buildImage: { const: false }
+            - properties:
+                buildImage: { const: true }
+                platforms:
+                  title: Platforms
+                  type: array
+                  uniqueItems: true
+                  minItems: 1
+                  default: [amd64, arm64]
+                  items:
+                    type: string
+                    enum: [amd64, arm64]
+                  ui:widget: checkboxes
+                  ui:help: Keep both unless you only ever run on one architecture. amd64 alone fails with "exec format error" on Apple Silicon or Graviton nodes.
+                deploy:
+                  title: Deploy
+                  type: string
+                  default: none
+                  enum: [none, gitops]
+                  enumNames: [Do not deploy, "GitOps image tag bump (pull request)"]
+                  ui:help: The GitOps option opens a pull request that sets the new image tag in your deployment repo after each push to the default branch.
+              dependencies:
+                deploy:
+                  oneOf:
+                    - properties:
+                        deploy: { const: none }
+                    - properties:
+                        deploy: { const: gitops }
+                        gitopsRepo:
+                          title: GitOps repository
+                          type: string
+                          pattern: '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$'
+                          description: owner/repo of the repository that holds the deployment values.
+                          default: efekaya-devex-platform/checkout-gitops
+                          ui:help: Same repository as this one needs no extra secret. A different repository needs a GITOPS_TOKEN secret in this repository with contents and pull-requests write on that repo.
+                        gitopsValuesPath:
+                          title: Values file path
+                          type: string
+                          description: Path to the values file inside the GitOps repo.
+                          default: apps/checkout-api/values.yaml
+                          ui:help: The image tag key in this file is updated, e.g. apps/web/values.yaml
+                      required: [gitopsRepo, gitopsValuesPath]
+    - title: Security
+      description: Quality gates that run on every push and pull request.
+      properties:
+        trivySeverity:
+          title: Trivy severity gate
+          type: string
+          default: CRITICAL
+          enum: [CRITICAL, "CRITICAL,HIGH"]
+          enumNames: [Fail on CRITICAL only, Fail on CRITICAL and HIGH]
+          ui:help: Only vulnerabilities with an available fix count towards the gate.
+        sbom:
+          title: Generate an SBOM
+          type: boolean
+          default: true
+          ui:help: An SPDX bill of materials is attached to each run as an artifact.
+  steps:
+    - id: fetch
+      name: Render the workflow
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          runtime: ${{ parameters.runtime }}
+          runtimeVersion: ${{ parameters.runtimeVersion }}
+          buildImage: ${{ parameters.buildImage }}
+          platforms: ${{ parameters.platforms }}
+          trivySeverity: ${{ parameters.trivySeverity }}
+          sbom: ${{ parameters.sbom }}
+          deploy: ${{ parameters.deploy }}
+          gitopsRepo: ${{ parameters.gitopsRepo }}
+          gitopsValuesPath: ${{ parameters.gitopsValuesPath }}
+
+    - id: pr
+      name: Open a pull request
+      action: publish:github:pull-request
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        branchName: platform/ci-building-block
+        title: 'ci: add the standard pipeline'
+        description: |
+          Adds `.github/workflows/ci.yml`, a caller of the shared
+          `building-block-ci` reusable workflow.
+
+          - runtime: `${{ parameters.runtime }} ${{ parameters.runtimeVersion }}`
+          - container image: `${{ parameters.buildImage }}`
+          - Trivy gate: `${{ parameters.trivySeverity }}`
+          - SBOM: `${{ parameters.sbom }}`
+          - deploy: `${{ parameters.deploy }}`
+
+          Requested via the portal.
+
+  output:
+    links:
+      - title: Review the pull request
+        url: ${{ steps['pr'].output.remoteUrl }}
+      - title: The shared workflow
+        url: https://github.com/efekaya-devops/backstage-idp/blob/main/.github/workflows/building-block-ci.yml

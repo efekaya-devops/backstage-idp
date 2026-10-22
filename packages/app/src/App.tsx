@@ -15,6 +15,9 @@ import { navModule } from './modules/nav';
 import { signInModule } from './modules/signIn';
 import { scaffolderPageModule } from './modules/scaffolderPage';
 import { homeModule } from './modules/home';
+import { applicationsModule } from './modules/applications';
+import { demoNoticeModule, demoScaffolderModule } from './modules/demoNotice';
+import { settingsModule, themeModule } from './modules/theme';
 
 export default createApp({
   features: [
@@ -28,5 +31,10 @@ export default createApp({
     signInModule,
     scaffolderPageModule,
     homeModule,
+    applicationsModule,
+    themeModule,
+    settingsModule,
+    demoNoticeModule,
+    demoScaffolderModule,
   ],
 });

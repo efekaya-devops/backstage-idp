@@ -1,0 +1,12 @@
+{%- set skus = { 'S': 'B1', 'M': 'S1', 'L': 'P1v3' } %}
+# requested through the portal, don't hand-edit - raise a new request instead
+apiVersion: platform.example.org/v1alpha1
+kind: WebAppPlatform
+metadata:
+  name: ${{ values.platformName }}
+spec:
+  platformName: ${{ values.platformName }}
+  resourceGroup: ${{ values.resourceGroup }}
+  containerImage: ${{ values.containerImage }}
+  planSku: ${{ skus[values.size] }}
+  team: ${{ values.team }}

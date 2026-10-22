@@ -1,0 +1,72 @@
+# OpenChoreo-native path: Environments and the promotion pipeline. Components that go
+# through OpenChoreo's own Component/Workload flow live in this namespace.
+# Next step: a ProjectType that renders the runtime/ guardrails into OpenChoreo's
+# per-environment cell namespaces, replacing runtime/ for those components.
+apiVersion: openchoreo.dev/v1alpha1
+kind: Environment
+metadata:
+  name: development
+  namespace: ${{ values.name }}
+  annotations:
+    openchoreo.dev/display-name: Development
+    openchoreo.dev/description: Development
+  labels:
+    openchoreo.dev/name: development
+spec:
+  dataPlaneRef:
+    kind: ClusterDataPlane
+    name: ${{ values.dataPlane or 'default' }}
+  isProduction: false
+---
+apiVersion: openchoreo.dev/v1alpha1
+kind: Environment
+metadata:
+  name: staging
+  namespace: ${{ values.name }}
+  annotations:
+    openchoreo.dev/display-name: Staging
+    openchoreo.dev/description: Staging
+  labels:
+    openchoreo.dev/name: staging
+spec:
+  dataPlaneRef:
+    kind: ClusterDataPlane
+    name: ${{ values.dataPlane or 'default' }}
+  isProduction: false
+---
+apiVersion: openchoreo.dev/v1alpha1
+kind: Environment
+metadata:
+  name: production
+  namespace: ${{ values.name }}
+  annotations:
+    openchoreo.dev/display-name: Production
+    openchoreo.dev/description: Production
+  labels:
+    openchoreo.dev/name: production
+spec:
+  dataPlaneRef:
+    kind: ClusterDataPlane
+    name: ${{ values.dataPlane or 'default' }}
+  isProduction: true
+---
+apiVersion: openchoreo.dev/v1alpha1
+kind: DeploymentPipeline
+metadata:
+  name: default
+  namespace: ${{ values.name }}
+  annotations:
+    openchoreo.dev/display-name: Default Pipeline
+    openchoreo.dev/description: Promotes development to staging to production
+  labels:
+    openchoreo.dev/name: default
+spec:
+  promotionPaths:
+    - sourceEnvironmentRef:
+        name: development
+      targetEnvironmentRefs:
+        - name: staging
+    - sourceEnvironmentRef:
+        name: staging
+      targetEnvironmentRefs:
+        - name: production

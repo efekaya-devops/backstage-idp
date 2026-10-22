@@ -1,0 +1,6 @@
+apiVersion: v2
+name: ${{ values.name }}
+description: OpenChoreo ${{ values.componentType }} ${{ values.name }} in project ${{ values.project }}
+type: application
+version: 0.1.0
+appVersion: ${{ values.tag | dump }}

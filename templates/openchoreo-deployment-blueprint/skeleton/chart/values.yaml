@@ -1,0 +1,56 @@
+{%- set tiers = {
+  'small':  { 'requests': { 'cpu': '100m', 'memory': '128Mi' }, 'limits': { 'cpu': '500m', 'memory': '512Mi' } },
+  'medium': { 'requests': { 'cpu': '250m', 'memory': '256Mi' }, 'limits': { 'cpu': '1',    'memory': '1Gi' } },
+  'large':  { 'requests': { 'cpu': '500m', 'memory': '512Mi' }, 'limits': { 'cpu': '2',    'memory': '2Gi' } }
+} %}
+# defaults for every environment; values-<env>.yaml overrides what differs.
+# Install into the environment's runtime namespace: helm install -n <team>-<env> -f values-<env>.yaml
+environment: development
+componentType: ${{ values.componentType }}
+project: ${{ values.project }}
+team: ${{ values.namespace }}
+
+image:
+  repository: ${{ values.image | dump }}
+  tag: ${{ values.tag | dump }}
+  pullPolicy: IfNotPresent
+
+port: ${{ values.port }}
+
+replicas:
+  min: ${{ values.minReplicas }}
+  max: ${{ values.maxReplicas }}
+
+resources: ${{ tiers[values.resourceTier or 'small'] | dump }}
+
+health:
+  livenessPath: ${{ values.livenessPath | dump }}
+  readinessPath: ${{ values.readinessPath | dump }}
+
+# cron expression, used when componentType is scheduled-task
+schedule: ${{ (values.schedule or '0 2 * * *') | dump }}
+
+exposure:
+  public: ${{ 'true' if values.exposure == 'public' else 'false' }}
+  hostname: ${{ (values.hostname or '') | dump }}
+  path: ${{ (values.path or '/') | dump }}
+  gateway:
+    name: ${{ (values.gatewayName or 'gateway-default') | dump }}
+    namespace: ${{ (values.gatewayNamespace or 'openchoreo-data-plane') | dump }}
+
+# [{team, app, port}] - the only egress allowed besides DNS. The callee's runtime
+# namespace is <team>-<environment>; the callee must also list this app in ingress.allowFrom
+egress: ${{ (values.egress or []) | dump }}
+
+secrets:
+  # SecretStore created by the openchoreo-namespace template
+  storeName: platform-secrets
+  # [{envVar, remoteKey, property}] - property is optional, empty means the whole value
+  items: ${{ (values.secrets or []) | dump }}
+
+ingress:
+  # [{team, app}] - callers admitted on the container port, from <team>-<environment>.
+  # Both sides must declare the dependency: the caller via egress, this app via allowFrom.
+  allowFrom: ${{ (values.allowFrom or []) | dump }}
+  # Prometheus scrapes the container port from this namespace
+  monitoringNamespace: ${{ (values.monitoringNamespace or 'monitoring') | dump }}

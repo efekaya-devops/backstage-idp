@@ -1,0 +1,23 @@
+# requested through the portal, don't hand-edit - raise a new request instead.
+# the portal discovers this file on merge, which is what puts the resource on
+# the catalog. no registration step needed.
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: ${{ values.clusterName }}
+  description: >-
+    Azure AKS cluster, requested through the portal. The module call is opened
+    as a PR for review only - nothing validates or applies it, so this is a request on record, not a running
+    cluster.
+  tags:
+    - azure
+    - terraform
+    - kubernetes
+    - ${{ values.environment }}
+  links:
+    - title: The terraform in git
+      url: https://github.com/efekaya-devex-platform/team-alpha/blob/main/infra/azure/${{ values.clusterName }}.tf
+spec:
+  type: azure-aks-cluster
+  owner: ${{ values.team }}
+  system: platform-infra

@@ -1,0 +1,6 @@
+# staging: scale as requested, hostname prefixed
+environment: staging
+{%- if values.exposure == 'public' %}
+exposure:
+  hostname: ${{ ('staging.' + values.hostname) | dump }}
+{%- endif %}

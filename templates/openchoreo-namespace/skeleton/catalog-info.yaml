@@ -1,0 +1,21 @@
+# requested through the portal, don't hand-edit - raise a new request instead
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: ns-${{ values.name }}
+  title: ${{ values.name }}
+  description: ${{ (values.description or ('OpenChoreo team namespace ' + values.name)) | dump }}
+  labels:
+    openchoreo.io/managed: "true"
+  annotations:
+    openchoreo.io/namespace: ${{ values.name }}
+  tags:
+    - openchoreo
+    - kustomize
+    - guardrails
+  links:
+    - title: The tenant in git
+      url: https://github.com/efekaya-devops/idp-gitops/tree/main/tenants/${{ values.name }}
+spec:
+  type: openchoreo-namespace
+  owner: ${{ values.owner }}

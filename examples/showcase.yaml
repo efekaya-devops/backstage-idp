@@ -1,0 +1,403 @@
+# Showcase data for the Applications page. The page reads only the catalog:
+#   label      openchoreo.io/managed: "true"      on every entity
+#   Namespace  kind Resource, spec.type openchoreo-namespace, named ns-<name>
+#              /namespace             the namespace name
+#              /guardrails (optional) JSON: environments [{name,dataPlane}],
+#                quota {env:{cpu,memory,pods}}, network [text], secretStore
+#                {provider,name}, podSecurity, rbac {owners,readers[]}
+#   Project    kind System; components point at it with spec.system
+#              /namespace, /pipeline (optional, free text "a -> b -> c")
+#   Component  annotations openchoreo.io/project, /namespace,
+#              /component-type (service|web-application|scheduled-task),
+#              /deployments "env=version:Status,..." with Status one of
+#              Ready|Progressing|Failed|NotDeployed (a missing env = not deployed)
+#              /environment-details (optional) JSON keyed by env, each:
+#                version, status, image, replicas "ready/desired", endpoint
+#                (URL or null), deployedAt (ISO), deployedBy, reason (for
+#                Failed/Progressing), release. Overrides /deployments per env.
+#              Missing fields render as a dash.
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: ns-team-checkout
+  title: team-checkout
+  description: OpenChoreo namespace for the checkout team.
+  labels:
+    openchoreo.io/managed: 'true'
+  annotations:
+    openchoreo.io/namespace: team-checkout
+    openchoreo.io/guardrails: |-
+      {
+        "environments": [
+          {
+            "name": "development",
+            "dataPlane": "dp-nonprod-westeurope"
+          },
+          {
+            "name": "staging",
+            "dataPlane": "dp-nonprod-westeurope"
+          },
+          {
+            "name": "production",
+            "dataPlane": "dp-prod-westeurope"
+          }
+        ],
+        "quota": {
+          "development": {
+            "cpu": "4",
+            "memory": "8Gi",
+            "pods": "30"
+          },
+          "staging": {
+            "cpu": "8",
+            "memory": "16Gi",
+            "pods": "50"
+          },
+          "production": {
+            "cpu": "24",
+            "memory": "48Gi",
+            "pods": "120"
+          }
+        },
+        "network": [
+          "Default deny for all ingress and egress",
+          "Egress to cluster DNS allowed",
+          "Traffic within the namespace allowed",
+          "Gateway ingress on declared service ports only"
+        ],
+        "secretStore": {
+          "provider": "Azure Key Vault",
+          "name": "kv-team-checkout"
+        },
+        "podSecurity": "restricted",
+        "rbac": {
+          "owners": "group:team-alpha",
+          "readers": [
+            "group:developers",
+            "group:platform-team"
+          ]
+        }
+      }
+spec:
+  type: openchoreo-namespace
+  owner: group:team-alpha
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: ns-team-logistics
+  title: team-logistics
+  description: OpenChoreo namespace for the logistics team.
+  labels:
+    openchoreo.io/managed: 'true'
+  annotations:
+    openchoreo.io/namespace: team-logistics
+    openchoreo.io/guardrails: |-
+      {
+        "environments": [
+          {
+            "name": "development",
+            "dataPlane": "dp-nonprod-westeurope"
+          },
+          {
+            "name": "staging",
+            "dataPlane": "dp-nonprod-westeurope"
+          },
+          {
+            "name": "production",
+            "dataPlane": "dp-prod-westeurope"
+          }
+        ],
+        "quota": {
+          "development": {
+            "cpu": "2",
+            "memory": "4Gi",
+            "pods": "20"
+          },
+          "staging": {
+            "cpu": "4",
+            "memory": "8Gi",
+            "pods": "30"
+          },
+          "production": {
+            "cpu": "16",
+            "memory": "32Gi",
+            "pods": "80"
+          }
+        },
+        "network": [
+          "Default deny for all ingress and egress",
+          "Egress to cluster DNS allowed",
+          "Traffic within the namespace allowed",
+          "Gateway ingress on declared service ports only"
+        ],
+        "secretStore": {
+          "provider": "Azure Key Vault",
+          "name": "kv-team-logistics"
+        },
+        "podSecurity": "restricted",
+        "rbac": {
+          "owners": "group:platform-team",
+          "readers": [
+            "group:developers"
+          ]
+        }
+      }
+spec:
+  type: openchoreo-namespace
+  owner: group:platform-team
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: checkout
+  title: Checkout
+  description: Storefront, cart and payment processing.
+  labels:
+    openchoreo.io/managed: 'true'
+  annotations:
+    openchoreo.io/pipeline: development → staging → production
+    openchoreo.io/namespace: team-checkout
+spec:
+  owner: group:team-alpha
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: logistics
+  title: Logistics
+  description: Parcel tracking and shipping labels.
+  labels:
+    openchoreo.io/managed: 'true'
+  annotations:
+    openchoreo.io/pipeline: development → staging → production
+    openchoreo.io/namespace: team-logistics
+spec:
+  owner: group:platform-team
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: storefront
+  description: Customer-facing web shop.
+  labels:
+    openchoreo.io/managed: 'true'
+  annotations:
+    openchoreo.io/project: checkout
+    openchoreo.io/namespace: team-checkout
+    openchoreo.io/component-type: web-application
+    openchoreo.io/deployments: development=v2.3.0:Ready,staging=v2.2.1:Ready,production=v2.2.0:Ready
+    openchoreo.io/environment-details: |-
+      {
+        "development": {
+          "version": "v2.3.0",
+          "status": "Ready",
+          "image": "ghcr.io/example-shop/storefront:v2.3.0",
+          "replicas": "2/2",
+          "endpoint": "https://storefront.dev.apps.example.com",
+          "deployedAt": "2026-10-20T14:12:00Z",
+          "deployedBy": "mark.devries",
+          "release": "storefront-development-f8907"
+        },
+        "staging": {
+          "version": "v2.2.1",
+          "status": "Ready",
+          "image": "ghcr.io/example-shop/storefront:v2.2.1",
+          "replicas": "2/2",
+          "endpoint": "https://storefront.stg.apps.example.com",
+          "deployedAt": "2026-10-17T09:40:00Z",
+          "deployedBy": "github-actions",
+          "release": "storefront-staging-ea2e8"
+        },
+        "production": {
+          "version": "v2.2.0",
+          "status": "Ready",
+          "image": "ghcr.io/example-shop/storefront:v2.2.0",
+          "replicas": "4/4",
+          "endpoint": "https://shop.example.com",
+          "deployedAt": "2026-10-14T10:05:00Z",
+          "deployedBy": "sanne.bakker",
+          "release": "storefront-production-d76a9"
+        }
+      }
+spec:
+  type: website
+  lifecycle: production
+  owner: group:team-alpha
+  system: checkout
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: cart-api
+  description: Shopping cart REST API.
+  labels:
+    openchoreo.io/managed: 'true'
+  annotations:
+    openchoreo.io/project: checkout
+    openchoreo.io/namespace: team-checkout
+    openchoreo.io/component-type: service
+    openchoreo.io/deployments: development=v1.4.2:Ready,staging=v1.4.1:Ready,production=v1.3.0:Ready
+    openchoreo.io/environment-details: |-
+      {
+        "development": {
+          "version": "v1.4.2",
+          "status": "Ready",
+          "image": "ghcr.io/example-shop/cart-api:v1.4.2",
+          "replicas": "1/1",
+          "endpoint": "https://cart-api.dev.apps.example.com",
+          "deployedAt": "2026-10-20T11:30:00Z",
+          "deployedBy": "mark.devries",
+          "release": "cart-api-development-d68c3"
+        },
+        "staging": {
+          "version": "v1.4.1",
+          "status": "Ready",
+          "image": "ghcr.io/example-shop/cart-api:v1.4.1",
+          "replicas": "2/2",
+          "endpoint": "https://cart-api.stg.apps.example.com",
+          "deployedAt": "2026-10-16T15:22:00Z",
+          "deployedBy": "github-actions",
+          "release": "cart-api-staging-06b5b"
+        },
+        "production": {
+          "version": "v1.3.0",
+          "status": "Ready",
+          "image": "ghcr.io/example-shop/cart-api:v1.3.0",
+          "replicas": "3/3",
+          "endpoint": "https://cart-api.example.com",
+          "deployedAt": "2026-10-02T08:15:00Z",
+          "deployedBy": "sanne.bakker",
+          "release": "cart-api-production-63e0b"
+        }
+      }
+spec:
+  type: service
+  lifecycle: production
+  owner: group:team-alpha
+  system: checkout
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: payment-worker
+  description: Processes payment events from the queue.
+  labels:
+    openchoreo.io/managed: 'true'
+  annotations:
+    openchoreo.io/project: checkout
+    openchoreo.io/namespace: team-checkout
+    openchoreo.io/component-type: service
+    openchoreo.io/deployments: development=v0.9.0:Progressing,staging=v0.8.4:Failed
+    openchoreo.io/environment-details: |-
+      {
+        "development": {
+          "version": "v0.9.0",
+          "status": "Progressing",
+          "image": "ghcr.io/example-shop/payment-worker:v0.9.0",
+          "replicas": "1/2",
+          "endpoint": null,
+          "deployedAt": "2026-10-21T08:02:00Z",
+          "deployedBy": "github-actions",
+          "reason": "Rolling out 1/2 replicas",
+          "release": "payment-worker-development-bcba3"
+        },
+        "staging": {
+          "version": "v0.8.4",
+          "status": "Failed",
+          "image": "ghcr.io/example-shop/payment-worker:v0.8.4",
+          "replicas": "0/2",
+          "endpoint": null,
+          "deployedAt": "2026-10-19T16:48:00Z",
+          "deployedBy": "github-actions",
+          "reason": "CrashLoopBackOff: PAYMENT_PROVIDER_KEY is not set",
+          "release": "payment-worker-staging-ea669"
+        }
+      }
+spec:
+  type: service
+  lifecycle: experimental
+  owner: group:team-alpha
+  system: checkout
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: tracking-api
+  description: Real-time parcel tracking API.
+  labels:
+    openchoreo.io/managed: 'true'
+  annotations:
+    openchoreo.io/project: logistics
+    openchoreo.io/namespace: team-logistics
+    openchoreo.io/component-type: service
+    openchoreo.io/deployments: development=v3.1.0:Ready,staging=v3.0.2:Ready,production=v3.0.2:Ready
+    openchoreo.io/environment-details: |-
+      {
+        "development": {
+          "version": "v3.1.0",
+          "status": "Ready",
+          "image": "ghcr.io/example-shop/tracking-api:v3.1.0",
+          "replicas": "1/1",
+          "endpoint": "https://tracking-api.dev.apps.example.com",
+          "deployedAt": "2026-10-20T13:05:00Z",
+          "deployedBy": "lotte.jansen",
+          "release": "tracking-api-development-9518b"
+        },
+        "staging": {
+          "version": "v3.0.2",
+          "status": "Ready",
+          "image": "ghcr.io/example-shop/tracking-api:v3.0.2",
+          "replicas": "2/2",
+          "endpoint": "https://tracking-api.stg.apps.example.com",
+          "deployedAt": "2026-10-15T12:30:00Z",
+          "deployedBy": "github-actions",
+          "release": "tracking-api-staging-c7367"
+        },
+        "production": {
+          "version": "v3.0.2",
+          "status": "Ready",
+          "image": "ghcr.io/example-shop/tracking-api:v3.0.2",
+          "replicas": "3/3",
+          "endpoint": "https://tracking.example.com",
+          "deployedAt": "2026-10-16T07:50:00Z",
+          "deployedBy": "lotte.jansen",
+          "release": "tracking-api-production-673d9"
+        }
+      }
+spec:
+  type: service
+  lifecycle: production
+  owner: group:platform-team
+  system: logistics
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: label-printer
+  description: Nightly batch that renders shipping labels.
+  labels:
+    openchoreo.io/managed: 'true'
+  annotations:
+    openchoreo.io/project: logistics
+    openchoreo.io/namespace: team-logistics
+    openchoreo.io/component-type: scheduled-task
+    openchoreo.io/deployments: development=v1.1.0:Ready
+    openchoreo.io/environment-details: |-
+      {
+        "development": {
+          "version": "v1.1.0",
+          "status": "Ready",
+          "image": "ghcr.io/example-shop/label-printer:v1.1.0",
+          "replicas": "1/1",
+          "endpoint": null,
+          "deployedAt": "2026-10-18T19:20:00Z",
+          "deployedBy": "lotte.jansen",
+          "release": "label-printer-development-bb061"
+        }
+      }
+spec:
+  type: service
+  lifecycle: production
+  owner: group:platform-team
+  system: logistics

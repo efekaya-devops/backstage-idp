@@ -41,6 +41,10 @@ auth:
 
 scaffolder: {}
 
+# without this the permission policy is never consulted
+permission:
+  enabled: true
+
 techdocs:
   builder: local
   generator:
@@ -63,54 +67,44 @@ catalog:
   rules:
     - allow: [Component, System, API, Resource, Location, User, Group]
   locations:
-    # the golden paths - a backend service and a frontend
+    # golden paths, building blocks, blueprints and infrastructure
     - type: file
-      target: ../../templates/create-service/template.yaml
+      target: ../../templates/golden-path/template.yaml
       rules:
         - allow: [Template]
     - type: file
-      target: ../../templates/create-react-app/template.yaml
-      rules:
-        - allow: [Template]
-    # infra self-service - each of these ends up as a PR on the gitops repo.
-    # crossplane-backed (claims/, continuously reconciled):
-    - type: file
-      target: ../../templates/request-resource-group/template.yaml
+      target: ../../templates/cicd-building-block/template.yaml
       rules:
         - allow: [Template]
     - type: file
-      target: ../../templates/request-database/template.yaml
+      target: ../../templates/blueprint-webapp-platform/template.yaml
       rules:
         - allow: [Template]
     - type: file
-      target: ../../templates/request-keyvault/template.yaml
+      target: ../../templates/azure-aks-cluster/template.yaml
       rules:
         - allow: [Template]
     - type: file
-      target: ../../templates/request-virtualnetwork/template.yaml
+      target: ../../templates/aws-eks-cluster/template.yaml
       rules:
         - allow: [Template]
     - type: file
-      target: ../../templates/request-webappplatform/template.yaml
-      rules:
-        - allow: [Template]
-    # terraform-backed (infra/, CI-validated only):
-    - type: file
-      target: ../../templates/request-bucket/template.yaml
+      target: ../../templates/stackit-ske-cluster/template.yaml
       rules:
         - allow: [Template]
     - type: file
-      target: ../../templates/request-eks-cluster/template.yaml
+      target: ../../templates/openchoreo-namespace/template.yaml
       rules:
         - allow: [Template]
     - type: file
-      target: ../../templates/request-gcs-bucket/template.yaml
+      target: ../../templates/openchoreo-deployment-blueprint/template.yaml
       rules:
         - allow: [Template]
+    # showcase data for the Applications page
     - type: file
-      target: ../../templates/request-gke-cluster/template.yaml
+      target: ../../examples/showcase.yaml
       rules:
-        - allow: [Template]
+        - allow: [System, Component, Resource]
     # fake users/groups so ownership shows up somewhere instead of blank
     - type: file
       target: ../../examples/org.yaml
@@ -136,6 +130,27 @@ catalog:
         organization: efekaya-devex-platform
         catalogPath: /catalog-info.yaml
         filters:
+          branch: main
+        schedule:
+          frequency: { minutes: 1 }
+          timeout: { minutes: 3 }
+      # components the OpenChoreo deployment blueprint writes to team-alpha
+      ocApps:
+        organization: efekaya-devex-platform
+        catalogPath: /apps/*/catalog-info.yaml
+        filters:
+          repository: '^team-alpha$'
+          branch: main
+        schedule:
+          frequency: { minutes: 1 }
+          timeout: { minutes: 3 }
+      # teams the OpenChoreo namespace template writes to idp-gitops (a different
+      # org, same GITHUB_TOKEN integration)
+      ocTenants:
+        organization: efekaya-devops
+        catalogPath: /tenants/*/catalog-info.yaml
+        filters:
+          repository: '^idp-gitops$'
           branch: main
         schedule:
           frequency: { minutes: 1 }

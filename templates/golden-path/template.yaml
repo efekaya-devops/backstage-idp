@@ -1,0 +1,145 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: golden-path
+  title: New application (golden path)
+  description: >-
+    One paved road for a new app. Composes the platform's building blocks: the
+    CI/CD building block (the reusable workflow: tests, Trivy gate, SBOM,
+    multi-arch image) plus GitOps deploy (every build opens a deploy PR that
+    ArgoCD rolls out), monitoring (ServiceMonitor and Grafana dashboard) and
+    TechDocs. Pick a Node.js API or a React frontend.
+  tags:
+    - golden-path
+    - service
+    - recommended
+spec:
+  owner: platform-team
+  type: service
+
+  parameters:
+    - title: Application details
+      required:
+        - name
+        - owner
+        - flavour
+      properties:
+        name:
+          title: Name
+          type: string
+          description: Lowercase, hyphenated (becomes the repo + DNS name)
+          default: checkout-api
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          maxLength: 40
+          ui:autofocus: true
+          ui:help: Letters, digits and single hyphens. Cannot be renamed later without a new repo.
+        description:
+          title: Description
+          type: string
+          description: One line on what this application does
+          default: Checkout API for the storefront
+          ui:help: Shown in the catalog and used as the repository description.
+        owner:
+          title: Owning team
+          type: string
+          default: group:default/team-alpha
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+          ui:help: The team that gets paged and can approve changes.
+        flavour:
+          title: Flavour
+          type: string
+          default: node-api
+          enum:
+            - node-api
+            - react-frontend
+          enumNames:
+            - Node.js API
+            - React frontend
+          ui:help: Node.js API serves /healthz and /metrics itself; the React frontend is built with Vite, served by nginx, and gets metrics from an exporter sidecar.
+        system:
+          title: System
+          type: string
+          description: Optional. The catalog System this belongs to.
+          default: system:default/checkout
+          ui:field: EntityPicker
+          ui:options:
+            catalogFilter:
+              kind: System
+          ui:help: Leave empty if the application does not belong to a system yet.
+    - title: Where to publish
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Repository location
+          type: string
+          default: github.com?owner=efekaya-devex-platform&repo=checkout-api
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+            allowedOwners:
+              - efekaya-devex-platform
+          ui:help: A new repository is created here. The name above becomes the repo name.
+
+  steps:
+    - id: fetch-common
+      name: Render common files
+      action: fetch:template
+      input:
+        url: ./skeleton/common
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          owner: ${{ parameters.owner }}
+          flavour: ${{ parameters.flavour }}
+          system: ${{ parameters.system }}
+          destination: ${{ parameters.repoUrl | parseRepoUrl }}
+
+    - id: fetch-flavour
+      name: Render ${{ parameters.flavour }} files
+      action: fetch:template
+      input:
+        url: ./skeleton/${{ parameters.flavour }}
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          destination: ${{ parameters.repoUrl | parseRepoUrl }}
+
+    - id: publish
+      name: Create GitHub repository
+      action: publish:github
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        description: ${{ parameters.description }}
+        defaultBranch: main
+        repoVisibility: public
+        # keep the branch protected (PRs required) but let the owner self-merge -
+        # publish:github defaults to 1 approval + enforce admins, which locks a
+        # solo dev out of their own repo
+        requiredApprovingReviewCount: 0
+        protectEnforceAdmins: false
+        # marker so the idp services are easy to spot in the org - the
+        # ApplicationSet actually discovers by the k8s/ folder, not this
+        topics:
+          - idp-service
+
+    - id: register
+      name: Register in the catalog
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps['publish'].output.remoteUrl }}
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}
+      - title: CI runs
+        url: ${{ steps['publish'].output.remoteUrl }}/actions

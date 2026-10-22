@@ -66,6 +66,29 @@ auth:
       dangerouslyAllowOutsideDevelopment: true
 
 catalog:
+  providers:
+    github:
+      # components the OpenChoreo deployment blueprint writes to team-alpha
+      ocApps:
+        organization: efekaya-devex-platform
+        catalogPath: /apps/*/catalog-info.yaml
+        filters:
+          repository: '^team-alpha$'
+          branch: main
+        schedule:
+          frequency: { minutes: 1 }
+          timeout: { minutes: 3 }
+      # teams the OpenChoreo namespace template writes to idp-gitops (a different
+      # org, same GITHUB_TOKEN integration)
+      ocTenants:
+        organization: efekaya-devops
+        catalogPath: /tenants/*/catalog-info.yaml
+        filters:
+          repository: '^idp-gitops$'
+          branch: main
+        schedule:
+          frequency: { minutes: 1 }
+          timeout: { minutes: 3 }
   # Overrides the file:// locations in app-config.yaml. Those use paths
   # relative to the working directory, which only line up when you run from
   # packages/backend the way `yarn start` does - a deployed backend resolves
@@ -77,50 +100,42 @@ catalog:
   # refresh instead of needing a redeploy.
   locations:
     - type: url
-      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/create-service/template.yaml
+      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/golden-path/template.yaml
       rules:
         - allow: [Template]
     - type: url
-      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/create-react-app/template.yaml
+      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/cicd-building-block/template.yaml
       rules:
         - allow: [Template]
     - type: url
-      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/request-resource-group/template.yaml
+      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/blueprint-webapp-platform/template.yaml
       rules:
         - allow: [Template]
     - type: url
-      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/request-database/template.yaml
+      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/azure-aks-cluster/template.yaml
       rules:
         - allow: [Template]
     - type: url
-      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/request-keyvault/template.yaml
+      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/aws-eks-cluster/template.yaml
       rules:
         - allow: [Template]
     - type: url
-      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/request-virtualnetwork/template.yaml
+      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/stackit-ske-cluster/template.yaml
       rules:
         - allow: [Template]
     - type: url
-      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/request-webappplatform/template.yaml
+      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/openchoreo-namespace/template.yaml
       rules:
         - allow: [Template]
     - type: url
-      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/request-bucket/template.yaml
-      rules:
-        - allow: [Template]
-    - type: url
-      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/request-eks-cluster/template.yaml
-      rules:
-        - allow: [Template]
-    - type: url
-      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/request-gcs-bucket/template.yaml
-      rules:
-        - allow: [Template]
-    - type: url
-      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/request-gke-cluster/template.yaml
+      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/openchoreo-deployment-blueprint/template.yaml
       rules:
         - allow: [Template]
     - type: url
       target: https://github.com/efekaya-devops/backstage-idp/blob/main/examples/org.yaml
       rules:
         - allow: [User, Group, System]
+    - type: url
+      target: https://github.com/efekaya-devops/backstage-idp/blob/main/examples/showcase.yaml
+      rules:
+        - allow: [System, Component, Resource]

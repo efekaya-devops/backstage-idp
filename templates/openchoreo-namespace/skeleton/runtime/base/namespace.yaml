@@ -1,0 +1,15 @@
+# Runtime namespace for Helm/kustomize workloads. The overlay renames it to <name>-<env>.
+# Not an OpenChoreo control-plane namespace; see ../../openchoreo/.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${{ values.name }}
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+    platform.example.org/managed-by: backstage
+  annotations:
+    platform.example.org/display-name: ${{ (values.displayName or values.name) | dump }}
+    platform.example.org/description: ${{ (values.description or ('Team namespace ' + values.name)) | dump }}

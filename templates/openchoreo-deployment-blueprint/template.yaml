@@ -1,0 +1,318 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: openchoreo-deployment-blueprint
+  title: OpenChoreo Deployment Blueprint (Helm)
+  description: >-
+    A production-shaped Helm chart for one OpenChoreo component: restricted
+    pod security, probes, autoscaling, a disruption budget, a gateway
+    HTTPRoute (or internal only), least-privilege network policy and secrets
+    synced from your namespace's secret store. Per-environment values files
+    for development, staging and production. Opened as a pull request on the
+    team repo, plus the catalog entity the Applications page reads.
+  tags:
+    - openchoreo
+    - helm
+    - deployment
+    - gitops
+spec:
+  owner: platform-team
+  type: openchoreo
+
+  parameters:
+    - title: Component
+      description: What you are deploying and where it belongs.
+      required:
+        - name
+        - project
+        - namespace
+        - componentType
+        - owner
+      properties:
+        name:
+          title: Component name
+          type: string
+          description: Lowercase and hyphenated. Names the chart, the Deployment and the catalog Component.
+          pattern: '^[a-z][a-z0-9-]{1,30}[a-z0-9]$'
+          default: payments-api
+          ui:autofocus: true
+        project:
+          title: Project
+          type: string
+          description: The OpenChoreo project (a catalog System) this component belongs to.
+          default: checkout
+          pattern: '^[a-z][a-z0-9-]{1,30}[a-z0-9]$'
+        namespace:
+          title: Target namespace
+          type: string
+          description: The team created with the namespace guardrails template. The component deploys to its per-environment runtime namespaces (`<team>-development`, `<team>-staging`, `<team>-production`).
+          default: resource:default/ns-team-checkout
+          ui:field: EntityPicker
+          ui:options:
+            catalogFilter:
+              kind: Resource
+              spec.type: openchoreo-namespace
+            defaultKind: Resource
+        componentType:
+          title: Component type
+          type: string
+          default: service
+          enum: [service, web-application, scheduled-task]
+          enumNames: [Service (API or worker), Web application, Scheduled task (CronJob)]
+          ui:help: A scheduled task renders a CronJob; the service, route, autoscaler and budget are skipped.
+        owner:
+          title: Owner
+          type: string
+          default: group:default/team-alpha
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+      dependencies:
+        componentType:
+          oneOf:
+            - properties:
+                componentType: { enum: [service, web-application] }
+            - properties:
+                componentType: { const: scheduled-task }
+                schedule:
+                  title: Schedule
+                  type: string
+                  default: "0 2 * * *"
+                  ui:help: Cron expression in UTC. The default runs daily at 02:00.
+    - title: Runtime
+      description: Image, port, scale and size.
+      required:
+        - image
+        - tag
+        - port
+      properties:
+        image:
+          title: Image
+          type: string
+          description: Repository without a tag.
+          default: ghcr.io/efekaya-devex-platform/payments-api
+          ui:help: e.g. ghcr.io/efekaya-devops/storefront
+        tag:
+          title: Image tag
+          type: string
+          default: 1.0.0
+          ui:help: Pin a version or commit SHA. Your CI can bump this through the values files.
+        port:
+          title: Container port
+          type: number
+          default: 8080
+          minimum: 1024
+          maximum: 65535
+          ui:help: Non-root containers cannot bind ports below 1024.
+        minReplicas:
+          title: Minimum replicas
+          type: number
+          default: 1
+          minimum: 1
+          maximum: 20
+          ui:help: Production runs at least 2 regardless of this value.
+        maxReplicas:
+          title: Maximum replicas
+          type: number
+          default: 3
+          minimum: 1
+          maximum: 50
+          ui:help: Must be at least the minimum (min <= max; the chart fails otherwise). The autoscaler scales between them at 75 percent CPU.
+        resourceTier:
+          title: CPU and memory tier
+          type: string
+          default: small
+          enum: [small, medium, large]
+          enumNames:
+            - Small (0.1 CPU, 128 MiB requested)
+            - Medium (0.25 CPU, 256 MiB requested)
+            - Large (0.5 CPU, 512 MiB requested)
+        livenessPath:
+          title: Liveness path
+          type: string
+          default: /healthz
+        readinessPath:
+          title: Readiness path
+          type: string
+          default: /readyz
+    - title: Networking
+      description: How traffic reaches the component and what it may call.
+      properties:
+        exposure:
+          title: Exposure
+          type: string
+          default: public
+          enum: [internal, public]
+          enumNames: [Internal only (cluster traffic), Public HTTPRoute through the gateway]
+        egress:
+          title: Egress dependencies
+          type: array
+          description: What this component may call. Everything else is blocked; DNS is always allowed. The callee must also list this component under "Allowed callers" below.
+          default:
+            - team: team-checkout
+              app: cart-api
+              port: 8080
+          items:
+            type: object
+            required: [team, app, port]
+            properties:
+              team:
+                title: Team
+                type: string
+                default: team-checkout
+                ui:help: The callee's team; the same environment's runtime namespace (team-environment) is used.
+              app:
+                title: App (app.kubernetes.io/name)
+                type: string
+                default: cart-api
+              port:
+                title: Port
+                type: number
+                default: 8080
+                minimum: 1
+                maximum: 65535
+        allowFrom:
+          title: Allowed callers
+          type: array
+          description: Components in other teams that may call this one, on its container port. Both sides must declare the dependency - the caller under egress, the callee here.
+          default:
+            - team: team-checkout
+              app: cart-api
+          items:
+            type: object
+            required: [team, app]
+            properties:
+              team:
+                title: Team
+                type: string
+                default: team-checkout
+                ui:help: The caller's team; the same environment's runtime namespace is admitted.
+              app:
+                title: App (app.kubernetes.io/name)
+                type: string
+                default: cart-api
+        monitoringNamespace:
+          title: Monitoring namespace
+          type: string
+          default: monitoring
+          description: Prometheus scrapes the container port from this namespace.
+      dependencies:
+        exposure:
+          oneOf:
+            - properties:
+                exposure: { const: internal }
+            - properties:
+                exposure: { const: public }
+                hostname:
+                  title: Hostname
+                  type: string
+                  pattern: '^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$'
+                  default: payments.demo.efekaya.io
+                  ui:help: The production hostname. Development and staging get a dev. or staging. prefix.
+                path:
+                  title: Path prefix
+                  type: string
+                  default: /
+                  pattern: '^/.*'
+                gatewayName:
+                  title: Gateway name
+                  type: string
+                  default: gateway-default
+                gatewayNamespace:
+                  title: Gateway namespace
+                  type: string
+                  default: openchoreo-data-plane
+                  ui:help: The route attaches to this Gateway. It must match the namespace's gateway.
+              required: [hostname]
+    - title: Secrets
+      description: Secrets synced by External Secrets Operator from the namespace's platform-secrets store into one Kubernetes Secret.
+      properties:
+        secrets:
+          title: External secrets
+          type: array
+          default:
+            - envVar: DATABASE_URL
+              remoteKey: checkout-db-url
+          items:
+            type: object
+            required: [envVar, remoteKey]
+            properties:
+              envVar:
+                title: Environment variable
+                type: string
+                pattern: '^[A-Z][A-Z0-9_]*$'
+                default: DATABASE_URL
+              remoteKey:
+                title: Key in the secret store
+                type: string
+                default: checkout-db-url
+                ui:help: Name of the secret in your Key Vault, Secrets Manager or Vault.
+              property:
+                title: JSON property (optional)
+                type: string
+                default: ""
+                ui:help: For a secret stored as JSON, the field to extract. Empty uses the whole value.
+
+  steps:
+    - id: fetch
+      name: Render the chart
+      action: fetch:template
+      input:
+        url: ./skeleton
+        copyWithoutTemplating:
+          - chart/templates/**
+        values:
+          name: ${{ parameters.name }}
+          project: ${{ parameters.project }}
+          namespace: ${{ parameters.namespace | parseEntityRef | pick('name') | replace('ns-', '', 1) }}
+          componentType: ${{ parameters.componentType }}
+          schedule: ${{ parameters.schedule }}
+          owner: ${{ parameters.owner }}
+          image: ${{ parameters.image }}
+          tag: ${{ parameters.tag }}
+          port: ${{ parameters.port }}
+          minReplicas: ${{ parameters.minReplicas }}
+          maxReplicas: ${{ parameters.maxReplicas }}
+          resourceTier: ${{ parameters.resourceTier }}
+          livenessPath: ${{ parameters.livenessPath }}
+          readinessPath: ${{ parameters.readinessPath }}
+          exposure: ${{ parameters.exposure }}
+          hostname: ${{ parameters.hostname }}
+          path: ${{ parameters.path }}
+          gatewayName: ${{ parameters.gatewayName }}
+          gatewayNamespace: ${{ parameters.gatewayNamespace }}
+          egress: ${{ parameters.egress }}
+          allowFrom: ${{ parameters.allowFrom }}
+          monitoringNamespace: ${{ parameters.monitoringNamespace }}
+          secrets: ${{ parameters.secrets }}
+        targetPath: apps/${{ parameters.name }}
+
+    - id: pr
+      name: Open a pull request
+      action: publish:github:pull-request
+      input:
+        repoUrl: github.com?owner=efekaya-devex-platform&repo=team-alpha
+        branchName: oc-app-${{ parameters.name }}
+        title: 'app: openchoreo component ${{ parameters.name }}'
+        description: |
+          Requested via the portal.
+
+          Adds `apps/${{ parameters.name }}/chart/` (Helm chart with development, staging and production values) and the catalog Component `catalog-info.yaml`.
+
+          - project: `${{ parameters.project }}`
+          - team: `${{ parameters.namespace | parseEntityRef | pick('name') | replace('ns-', '', 1) }}` (deploys to `<team>-development`, `<team>-staging`, `<team>-production`)
+          - type: `${{ parameters.componentType }}`
+          - image: `${{ parameters.image }}:${{ parameters.tag }}`
+          - exposure: `${{ parameters.exposure }}`
+
+          Secrets use the runtime namespace's `platform-secrets` SecretStore (External Secrets `external-secrets.io/v1`).
+
+          Install per environment with `helm install ${{ parameters.name }} . -n ${{ parameters.namespace | parseEntityRef | pick('name') | replace('ns-', '', 1) }}-<env> -f values-<env>.yaml`.
+
+          After this PR is merged, the component appears in the catalog on the next discovery refresh (about a minute).
+
+  output:
+    links:
+      - title: Review the pull request
+        url: ${{ steps['pr'].output.remoteUrl }}
