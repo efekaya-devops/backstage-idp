@@ -141,6 +141,10 @@ sudo systemctl reload nginx
 if [ -n "$CERT_EMAIL" ] && ! sudo test -d "/etc/letsencrypt/live/$DOMAIN"; then
   echo "### certificate"
   sudo certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos -m "$CERT_EMAIL" --redirect
+elif sudo test -d "/etc/letsencrypt/live/$DOMAIN"; then
+  # The nginx.conf written above has no TLS listener, so re-attach the existing
+  # certificate. Install only: no new certificate, renewal settings untouched.
+  sudo certbot install --cert-name "$DOMAIN" --nginx --redirect --non-interactive
 fi
 
 echo
