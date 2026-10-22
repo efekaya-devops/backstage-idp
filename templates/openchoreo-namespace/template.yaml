@@ -217,7 +217,7 @@ spec:
           - RoleBindings: owner `edit`, readers `view`
           - External Secrets store `platform-secrets` (`${{ parameters.secretProvider }}`)
 
-          Nothing applies `tenants/` automatically until ArgoCD Applications point at `openchoreo/` and the three overlays.
+          After merge, ArgoCD syncs the development overlay (`${{ parameters.name }}-development`) via the `tenants` ApplicationSet. The demo has one cluster, so staging, production and `openchoreo/` are not synced.
 
           After this PR is merged, the team appears in the catalog on the next discovery refresh (about a minute).
 
