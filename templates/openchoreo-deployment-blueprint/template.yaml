@@ -308,7 +308,7 @@ spec:
 
           Secrets use the runtime namespace's `platform-secrets` SecretStore (External Secrets `external-secrets.io/v1`).
 
-          Install per environment with `helm install ${{ parameters.name }} . -n ${{ parameters.namespace | parseEntityRef | pick('name') | replace('ns-', '', 1) }}-<env> -f values-<env>.yaml`.
+          After merge, ArgoCD syncs the development environment (`values-development.yaml` into `<team>-development`) via the `oc-apps` ApplicationSet. The team namespace must already be merged. Staging and production are not synced on the demo; install them with `helm install ${{ parameters.name }} . -n ${{ parameters.namespace | parseEntityRef | pick('name') | replace('ns-', '', 1) }}-<env> -f values-<env>.yaml`.
 
           After this PR is merged, the component appears in the catalog on the next discovery refresh (about a minute).
 
